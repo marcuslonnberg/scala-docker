@@ -5,6 +5,6 @@ import spray.http.StatusCode
 
 abstract class DockerApiException(message: String) extends RuntimeException(message)
 
-class ContainerNotFoundException(id: ContainerId) extends DockerApiException(id.id)
+class ContainerNotFoundException(id: ContainerId) extends DockerApiException(id.hash)
 
 class UnknownResponseException(statusCode: StatusCode) extends DockerApiException(statusCode.value)

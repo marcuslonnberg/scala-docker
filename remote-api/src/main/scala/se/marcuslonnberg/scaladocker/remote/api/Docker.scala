@@ -1,51 +1,68 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
-import spray.http.HttpMethods.{DELETE, POST}
-import spray.http._
-import spray.http.Uri._
 import akka.actor.ActorRefFactory
-import scala.concurrent.duration.Duration
-import spray.http.HttpRequest
 import se.marcuslonnberg.scaladocker.remote.models._
+import spray.http.HttpMethods.{DELETE, POST}
+import spray.http.Uri._
+import spray.http._
 
-case class DockerHost(host: String, port: Int = 4243)(implicit val actorRefFactory: ActorRefFactory) extends DockerHostCommands with DockerPipeline {
-  override def baseUri = Uri(s"http://$host:$port")
-}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration
 
-trait DockerHostCommands {
-  this: DockerPipeline =>
+case class DockerClient(hostname: String, port: Int = 4243)(implicit val actorRefFactory: ActorRefFactory) {
+  val containers = new ContainerCommands with Context
+  val host = new HostCommands with Context
+  val images = new ImageCommands with Context
 
-  implicit def actorRefFactory: ActorRefFactory
+  trait Context {
+    this: DockerCommands =>
+    override def baseUri = Uri(s"http://$hostname:$port")
 
-  private implicit val dispatcher = actorRefFactory.dispatcher
+    implicit def actorRefFactory = DockerClient.this.actorRefFactory
 
-  def ping = get[String](Path / "_ping").map(_ == "OK")
-
-  def images = get[Seq[Image]](Path / "images" / "json")
-
-  def containers(all: Boolean = false) = get[Seq[ContainerStatus]](Path / "containers" / "json")
-
-  def container(id: ContainerId) = get[ContainerInfo](Path / "containers" / id.id / "json")
-
-  def createContainer(config: ContainerConfig) = {
-    post[ContainerConfig, CreateContainerResponse](Path / "containers" / "create", content = config)
+    implicit def dispatcher = actorRefFactory.dispatcher
   }
 
-  def startContainer(id: ContainerId, config: HostConfig) = {
-    val uri = baseUri.withPath(Path / "containers" / id.id / "start")
+}
+
+trait DockerCommands extends DockerPipeline {
+  implicit def actorRefFactory: ActorRefFactory
+
+  implicit def dispatcher: ExecutionContext
+}
+
+trait HostCommands extends DockerCommands {
+  def ping = getRequest[String](Path / "_ping").map(_ == "OK")
+}
+
+trait ImageCommands extends DockerCommands {
+  def list = getRequest[Seq[Image]](Path / "images" / "json")
+}
+
+trait ContainerCommands extends DockerCommands {
+  def list(all: Boolean = false) = getRequest[Seq[ContainerStatus]](Path / "containers" / "json")
+
+  def get(id: ContainerId) = getRequest[ContainerInfo](Path / "containers" / id.hash / "json")
+
+  def create(config: ContainerConfig) = {
+    postRequest[ContainerConfig, CreateContainerResponse](Path / "containers" / "create", content = config)
+  }
+
+  def start(id: ContainerId, config: HostConfig) = {
+    val uri = baseUri.withPath(Path / "containers" / id.hash / "start")
     request(HttpRequest(POST, uri)) map containerResponse(id)
   }
 
-  def stopContainer(id: ContainerId, maxWaitTime: Option[Duration] = None) = {
+  def stop(id: ContainerId, maxWaitTime: Option[Duration] = None) = {
     val uri = baseUri
-      .withPath(Path / "containers" / id.id / "stop")
+      .withPath(Path / "containers" / id.hash / "stop")
       .withQuery("t" -> maxWaitTime.fold(Query.EmptyValue)(_.toSeconds.toString))
     request(HttpRequest(POST, uri)) map containerResponse(id)
   }
 
-  def deleteContainer(id: ContainerId, removeVolumes: Option[Boolean] = None, force: Option[Boolean] = None) = {
+  def delete(id: ContainerId, removeVolumes: Option[Boolean] = None, force: Option[Boolean] = None) = {
     val uri = baseUri
-      .withPath(Path / "containers" / id.id)
+      .withPath(Path / "containers" / id.hash)
       .withQuery(
         "t" -> removeVolumes.fold(Query.EmptyValue)(_.toString),
         "force" -> force.fold(Query.EmptyValue)(_.toString))

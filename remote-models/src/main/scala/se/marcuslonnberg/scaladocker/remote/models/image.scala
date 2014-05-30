@@ -11,7 +11,7 @@ case class Image(created: DateTime,
 
 sealed trait ImageIdentifier
 
-case class ImageId(id: String) extends ImageIdentifier
+case class ImageId(hash: String) extends ImageIdentifier
 
 object ImageName {
   def apply(name: String): ImageName = {
@@ -43,7 +43,7 @@ object ImageName {
 }
 
 case class ImageName(registry: Option[String] = None, namespace: Option[String] = None,
-                     repository: String, tag: Option[String] = None) extends ImageIdentifier{
+                     repository: String, tag: Option[String] = None) extends ImageIdentifier {
   override def toString = {
     val registryString = registry.fold("")(_ + "/")
     val namespaceString = namespace.fold("")(_ + "/")

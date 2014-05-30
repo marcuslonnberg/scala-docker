@@ -3,7 +3,7 @@ package se.marcuslonnberg.scaladocker.remote.models
 import org.joda.time.DateTime
 import org.json4s.JObject
 
-case class ContainerId(id: String)
+case class ContainerId(hash: String)
 
 case class Port(ip: Option[String], privatePort: Option[Int], publicPort: Int, `type`: String)
 

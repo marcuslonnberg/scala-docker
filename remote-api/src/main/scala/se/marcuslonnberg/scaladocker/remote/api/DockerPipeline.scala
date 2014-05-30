@@ -10,12 +10,12 @@ import spray.httpx.marshalling.Marshaller
 trait DockerPipeline extends JsonSupport {
   private[api] def baseUri: Uri
 
-  private[api] def get[T](path: Uri.Path, query: Uri.Query = Uri.Query.Empty)(implicit actorRefFactory: ActorRefFactory, manifest: Manifest[T], unmarshaller: FromResponseUnmarshaller[T]) = {
+  private[api] def getRequest[T](path: Uri.Path, query: Uri.Query = Uri.Query.Empty)(implicit actorRefFactory: ActorRefFactory, manifest: Manifest[T], unmarshaller: FromResponseUnmarshaller[T]) = {
     val uri = baseUri.withPath(path).withQuery(query)
     pipeline(Get(uri))
   }
 
-  private[api] def post[F, T](path: Uri.Path,
+  private[api] def postRequest[F, T](path: Uri.Path,
                               query: Uri.Query = Uri.Query.Empty,
                               content: F
                                )(implicit actorRefFactory: ActorRefFactory,
