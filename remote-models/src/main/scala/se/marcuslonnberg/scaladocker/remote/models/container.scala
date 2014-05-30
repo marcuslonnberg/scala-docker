@@ -5,14 +5,14 @@ import org.json4s.JObject
 
 case class ContainerId(id: String)
 
-case class Ports(ip: Option[String], privatePort: Option[Int], publicPort: Int, `type`: String)
+case class Port(ip: Option[String], privatePort: Option[Int], publicPort: Int, `type`: String)
 
 case class ContainerStatus(command: String,
                            created: DateTime,
                            id: ContainerId,
                            image: ImageName,
                            names: List[String],
-                           ports: List[Ports],
+                           ports: List[Port],
                            status: String)
 
 case class ContainerConfig(hostname: Option[String] = None,
@@ -22,19 +22,21 @@ case class ContainerConfig(hostname: Option[String] = None,
                            attachStdin: Option[Boolean] = None,
                            attachStdout: Option[Boolean] = None,
                            attachStderr: Option[Boolean] = None,
-                           portSpecs: Option[String] = None,
+                           portSpecs: List[String] = List.empty,
                            tty: Option[Boolean] = None,
                            openStdin: Option[Boolean] = None,
                            stdinOnce: Option[Boolean] = None,
                            env: List[String] = List.empty,
                            cmd: List[String] = List.empty,
-                           dns: Option[String] = None,
+                           dns: List[String] = List.empty,
                            image: String,
-                           volumes: Option[JObject] = None,
+                           volumes: List[String] = List.empty,
                            volumesFrom: Option[String] = None,
                            workingDir: Option[String] = None,
                            networkDisabled: Option[Boolean] = None,
-                           exposedPorts: Option[JObject] = None)
+                           exposedPorts: List[Port] = List.empty)
+
+case class VolumeBind(from: String, to: String)
 
 object ContainerLink {
   def parse(link: String) = {
@@ -55,7 +57,46 @@ case class HostConfig(binds: List[String] = List.empty,
                       lxcConf: Map[String, String] = Map.empty,
                       portBindings: Option[JObject] = None,
                       publishAllPorts: Option[Boolean] = None,
-                      privileged: Option[Boolean] = None)
+                      privileged: Option[Boolean] = None,
+                      dns: Option[String] = None,
+                      dnsSearch: Option[String] = None,
+                      volumesFrom: Option[String] = None,
+                      networkMode: Option[String] = None)
 
 case class CreateContainerResponse(id: ContainerId, warnings: List[String])
 
+
+case class ContainerState(running: Boolean,
+                          pid: Int,
+                          exitCode: Int,
+                          startedAt: DateTime,
+                          ghost: Boolean = false,
+                          finishedAt: Option[String] = None)
+
+
+case class NetworkSettings(ipAddress: String,
+                           ipPrefixLen: Int,
+                           gateway: String,
+                           bridge: String,
+                           portMapping: Option[String] = None)
+
+
+case class ContainerInfo(id: ContainerId,
+                         created: DateTime,
+                         path: String,
+                         args: List[String],
+                         config: ContainerConfig,
+                         state: ContainerState,
+                         image: String,
+                         networkSettings: NetworkSettings,
+                         resolvConfPath: String,
+                         hostnamePath: String,
+                         hostsPath: String,
+                         name: String,
+                         driver: String,
+                         execDriver: String,
+                         mountLabel: Option[String] = None,
+                         processLabel: Option[String] = None,
+                         //volumes: List[String],
+                         //volumesRW: List[String],
+                         hostConfig: HostConfig)

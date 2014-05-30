@@ -44,7 +44,7 @@ object ImageName {
 
 case class ImageName(registry: Option[String] = None, namespace: Option[String] = None,
                      repository: String, tag: Option[String] = None) extends ImageIdentifier{
-  def name = {
+  override def toString = {
     val registryString = registry.fold("")(_ + "/")
     val namespaceString = namespace.fold("")(_ + "/")
     val tagString = tag.fold("")(":" + _)

@@ -8,7 +8,7 @@ import spray.http.HttpRequest
 import se.marcuslonnberg.scaladocker.remote.models._
 
 case class DockerHost(host: String, port: Int = 4243) extends DockerHostCommands with DockerPipeline {
-  override def baseUri = Uri(scheme = "http", authority = Authority(Host(host), port))
+  override def baseUri = Uri(s"http://$host:$port")
 }
 
 trait DockerHostCommands {
@@ -24,6 +24,9 @@ trait DockerHostCommands {
 
   def containers(all: Boolean = false)(implicit actorRefFactory: ActorRefFactory) =
     get[Seq[ContainerStatus]](Path / "containers" / "json")
+
+  def container(id: ContainerId)(implicit actorRefFactory: ActorRefFactory) =
+    get[ContainerInfo](Path / "containers" / id.id / "json")
 
   def createContainer(config: ContainerConfig)(implicit actorRefFactory: ActorRefFactory) =
     post[ContainerConfig, CreateContainerResponse](Path / "containers" / "create", content = config)
