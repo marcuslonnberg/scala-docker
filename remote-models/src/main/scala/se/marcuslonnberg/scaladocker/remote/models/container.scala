@@ -9,8 +9,8 @@ case class Ports(ip: Option[String], privatePort: Option[Int], publicPort: Int, 
 
 case class ContainerStatus(command: String,
                            created: DateTime,
-                           id: String,
-                           image: String,
+                           id: ContainerId,
+                           image: ImageName,
                            names: List[String],
                            ports: List[Ports],
                            status: String)
@@ -41,6 +41,7 @@ object ContainerLink {
     link.split(':') match {
       case Array(container) => ContainerLink(container)
       case Array(container, alias) => ContainerLink(container, Some(alias))
+      case _ => throw new IllegalArgumentException(s"Could not parse '$link' as a container link")
     }
   }
 }

@@ -14,6 +14,11 @@ case class DockerHost(host: String, port: Int = 4243) extends DockerHostCommands
 trait DockerHostCommands {
   this: DockerPipeline =>
 
+  def ping()(implicit actorRefFactory: ActorRefFactory) = {
+    import actorRefFactory.dispatcher
+    get[String](Path / "_ping").map(_ == "OK")
+  }
+
   def images()(implicit actorRefFactory: ActorRefFactory) =
     get[Seq[Image]](Path / "images" / "json")
 

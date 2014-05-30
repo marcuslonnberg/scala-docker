@@ -23,6 +23,18 @@ object JsonFormats {
     FieldSerializer(serializer orElse toUpperCamelCase, deserializer orElse fromUpperCamelCase)
   }
 
+  val ImageNameFormat = new CustomSerializer[ImageName](formats => ( {
+    case JString(id) => ImageName(id)
+  }, {
+    case name: ImageName => JString(name.name)
+  }))
+
+  val ImageIdFormat = new CustomSerializer[ImageId](formats => ( {
+    case JString(id) => ImageId(id)
+  }, {
+    case ImageId(id) => JString(id)
+  }))
+
   val ContainerIdFormat = new CustomSerializer[ContainerId](formats => ( {
     case JString(id) => ContainerId(id)
   }, {
@@ -41,13 +53,15 @@ object JsonFormats {
     case dateTime: DateTime => JInt(dateTime.millis / 1000)
   }))
 
-  def jsonFormats: Formats = DefaultFormats +
+  def apply(): Formats = DefaultFormats +
     camelCaseFieldSerializer[Ports](deserializer = FieldSerializer.renameFrom("IP", "ip")) +
     camelCaseFieldSerializer[ContainerStatus]() +
     camelCaseFieldSerializer[Image]() +
     camelCaseFieldSerializer[ContainerConfig]() +
     camelCaseFieldSerializer[HostConfig]() +
     camelCaseFieldSerializer[CreateContainerResponse]() +
+    ImageNameFormat +
+    ImageIdFormat +
     ContainerIdFormat +
     ContainerLinkFormat +
     DateTimeFormat
