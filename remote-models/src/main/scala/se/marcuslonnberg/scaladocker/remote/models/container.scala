@@ -3,7 +3,9 @@ package se.marcuslonnberg.scaladocker.remote.models
 import org.joda.time.DateTime
 import org.json4s.JObject
 
-case class ContainerId(hash: String)
+case class ContainerId(hash: String) {
+  override def toString = hash
+}
 
 case class Port(ip: Option[String], privatePort: Option[Int], publicPort: Int, `type`: String)
 
@@ -29,7 +31,7 @@ case class ContainerConfig(hostname: Option[String] = None,
                            env: List[String] = List.empty,
                            cmd: List[String] = List.empty,
                            dns: List[String] = List.empty,
-                           image: String,
+                           image: ImageName,
                            volumes: List[String] = List.empty,
                            volumesFrom: Option[String] = None,
                            workingDir: Option[String] = None,
