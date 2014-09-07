@@ -1,7 +1,8 @@
 import sbt._
 
 object Dependencies {
-  val akkaVersion = "2.3.2"
+  val akkaVersion = "2.3.6"
+  val akkaHttpStreamsVersion = "0.6"
   val json4sVersion = "3.2.10"
 
   val json4sNative = "org.json4s" %% "json4s-native" % json4sVersion
@@ -9,19 +10,15 @@ object Dependencies {
 
   val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "1.0.0"
 
-  val sprayClient = "io.spray" % "spray-client" % "1.3.1"
-
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
+  val akkaStream = "com.typesafe.akka" %% "akka-stream-experimental" % akkaHttpStreamsVersion
+  val akkaHttp = "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpStreamsVersion
 
   val scalaTest = "org.scalatest" %% "scalatest" % "2.1.6" % "test"
 
   object Projects {
-    val remoteApi = Seq(sprayClient, akkaActor, scalaTest)
+    val remoteApi = Seq(akkaActor, akkaStream, akkaHttp, scalaTest)
     val remoteModels = Seq(json4sNative, json4sExt, nscalaTime, scalaTest)
-  }
-
-  object Resolvers {
-    val spray = "spray repo" at "http://repo.spray.io"
   }
 
 }

@@ -1,18 +1,19 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
+import akka.http.model.HttpMethods._
+import akka.http.model.Uri._
+import akka.http.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
+import akka.stream.FlowMaterializer
+import akka.stream.scaladsl.Flow
 import org.json4s.JObject
 import org.json4s.native.Serialization._
 import se.marcuslonnberg.scaladocker.remote.models._
-import spray.http.HttpMethods.{DELETE, POST}
-import spray.http.Uri._
-import spray.http._
-import spray.httpx.UnsuccessfulResponseException
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
-case class DockerClient(hostname: String, port: Int = 4243)(implicit val system: ActorSystem) {
+case class DockerClient(hostname: String, port: Int = 2375)(implicit system: ActorSystem, materializer: FlowMaterializer) {
   val containers = new ContainerCommands with Context
   val host = new HostCommands with Context
   val images = new ImageCommands with Context
@@ -23,20 +24,23 @@ case class DockerClient(hostname: String, port: Int = 4243)(implicit val system:
 
     implicit def system = DockerClient.this.system
 
+    implicit def materializer = DockerClient.this.materializer
+
     implicit def dispatcher = system.dispatcher
   }
 
   import system.dispatcher
 
-  def run(containerConfig: ContainerConfig, hostConfig: HostConfig): Future[ContainerId] = {
+  def run(containerConfig: ContainerConfig, hostConfig: HostConfig)(implicit materializer: FlowMaterializer): Future[ContainerId] = {
     runLocal(containerConfig, hostConfig).recoverWith {
       case _: UnknownResponseException =>
         images.create(containerConfig.image).flatMap { r =>
-          val error = r.collectFirst { case e: Error => e}
-          error match {
-            case Some(_) =>
+          val eventualError = r.collect { case e: Error => e}.toFuture
+          eventualError.map {
+            case error =>
               throw new CreateImageException(containerConfig.image)
-            case None =>
+          }.recoverWith {
+            case e: NoSuchElementException =>
               runLocal(containerConfig, hostConfig)
           }
         }
@@ -53,6 +57,8 @@ case class DockerClient(hostname: String, port: Int = 4243)(implicit val system:
 trait DockerCommands extends DockerPipeline {
   implicit def system: ActorSystem
 
+  implicit def materializer: FlowMaterializer
+
   implicit def dispatcher: ExecutionContext
 }
 
@@ -63,7 +69,7 @@ trait HostCommands extends DockerCommands {
 trait ImageCommands extends DockerCommands {
   def list = getRequest[Seq[Image]](Path / "images" / "json")
 
-  def create(imageName: ImageName): Future[Seq[Progress]] = {
+  def create(imageName: ImageName): Future[Flow[Progress]] = {
     val parameters = Map(
       "fromImage" -> Option(imageName.repository),
       "tag" -> imageName.tag,
@@ -74,17 +80,18 @@ trait ImageCommands extends DockerCommands {
       .withPath(Path / "images" / "create")
       .withQuery(parameters.mapValues(_.getOrElse("")))
 
-    requestChunkedLines(HttpRequest(POST, uri)) recover {
-      case ex: UnsuccessfulResponseException if ex.response.status == StatusCodes.NotFound =>
-        throw new CreateImageException(imageName)
-    } map { lines =>
-      lines.map { line =>
+    requestChunkedLines(HttpRequest(POST, uri)).map { lines =>
+      lines
+        .filter(_.nonEmpty)
+        .map { line =>
         val obj = read[JObject](line)
         obj.extractOpt[ProgressStatus]
           .orElse(obj.extractOpt[ImageStatus])
           .orElse(obj.extractOpt[Status])
           .orElse(obj.extractOpt[Error])
-      }.flatten
+      }.collect {
+        case Some(v) => v
+      }
     }
   }
 }
@@ -100,14 +107,14 @@ trait ContainerCommands extends DockerCommands {
 
   def start(id: ContainerId, config: HostConfig) = {
     val uri = baseUri.withPath(Path / "containers" / id.hash / "start")
-    request(HttpRequest(POST, uri)) map containerResponse(id)
+    sendRequest(HttpRequest(POST, uri)) map containerResponse(id)
   }
 
   def stop(id: ContainerId, maxWaitTime: Option[Duration] = None) = {
     val uri = baseUri
       .withPath(Path / "containers" / id.hash / "stop")
       .withQuery("t" -> maxWaitTime.fold(Query.EmptyValue)(_.toSeconds.toString))
-    request(HttpRequest(POST, uri)) map containerResponse(id)
+    sendRequest(HttpRequest(POST, uri)) map containerResponse(id)
   }
 
   def delete(id: ContainerId, removeVolumes: Option[Boolean] = None, force: Option[Boolean] = None) = {
@@ -116,7 +123,18 @@ trait ContainerCommands extends DockerCommands {
       .withQuery(
         "t" -> removeVolumes.fold(Query.EmptyValue)(_.toString),
         "force" -> force.fold(Query.EmptyValue)(_.toString))
-    request(HttpRequest(DELETE, uri)) map containerResponse(id)
+    sendRequest(HttpRequest(DELETE, uri)) map containerResponse(id)
+  }
+
+  def logs(id: ContainerId, follow: Boolean = false, stdout: Boolean = true, stderr: Boolean = false, timestamps: Boolean = false): Future[Flow[String]] = {
+    val uri = baseUri
+      .withPath(Path / "containers" / id.hash / "logs")
+      .withQuery(
+        "follow" -> follow.toString,
+        "stdout" -> stdout.toString,
+        "stderr" -> stderr.toString,
+        "timestamps" -> timestamps.toString)
+    requestChunkedLines(HttpRequest(GET, uri))
   }
 
   private def containerResponse(id: ContainerId)(response: HttpResponse) = {

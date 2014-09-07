@@ -1,70 +1,88 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
+import akka.actor.ActorSystem
+import akka.http.Http
+import akka.http.Http.{Connect, OutgoingConnection}
+import akka.http.marshalling.Marshaller
+import akka.http.marshalling.Marshalling.WithFixedCharset
+import akka.http.model._
+import akka.http.unmarshalling.FromResponseUnmarshaller
 import akka.io.IO
-import spray.can.Http
-import spray.client.pipelining._
-import spray.http._
-import spray.httpx.unmarshalling.FromResponseUnmarshaller
-import scala.collection.immutable.Stack
-import scala.concurrent.{Promise, Future}
-import akka.actor.{Actor, Props, ActorSystem, ActorRefFactory}
-import spray.httpx.marshalling.Marshaller
+import akka.pattern.ask
+import akka.stream.FlowMaterializer
+import akka.stream.scaladsl.Flow
+import akka.util.Timeout
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 trait DockerPipeline extends JsonSupport {
   private[api] def baseUri: Uri
 
-  private[api] def getRequest[T](path: Uri.Path, query: Uri.Query = Uri.Query.Empty)(implicit actorRefFactory: ActorRefFactory, manifest: Manifest[T], unmarshaller: FromResponseUnmarshaller[T]) = {
+  private[api] def getRequest[T](path: Uri.Path, query: Uri.Query = Uri.Query.Empty)
+                                (implicit system: ActorSystem,
+                                 manifest: Manifest[T],
+                                 unmarshaller: FromResponseUnmarshaller[T],
+                                 materializer: FlowMaterializer) = {
     val uri = baseUri.withPath(path).withQuery(query)
-    pipeline(Get(uri))
+    sendAndUnmarhall(HttpRequest(HttpMethods.GET, uri))
   }
 
   private[api] def postRequest[F, T](path: Uri.Path,
-                              query: Uri.Query = Uri.Query.Empty,
-                              content: F
-                               )(implicit actorRefFactory: ActorRefFactory,
-                                 manifestTo: Manifest[T],
-                                 unmarshaller: FromResponseUnmarshaller[T],
-                                 marshaller: Marshaller[F]) = {
+                                     query: Uri.Query = Uri.Query.Empty,
+                                     content: F)
+                                    (implicit system: ActorSystem,
+                                     manifestTo: Manifest[T],
+                                     unmarshaller: FromResponseUnmarshaller[T],
+                                     marshaller: Marshaller[F, HttpEntity.Regular],
+                                     materializer: FlowMaterializer) = {
+    import system.dispatcher
     val uri = baseUri.withPath(path).withQuery(query)
-    pipeline(Post(uri, content))
+    val eventualEntity = marshaller(content).map {
+      case marshalling: WithFixedCharset[HttpEntity.Regular] =>
+        marshalling.marshal()
+      case marshalling =>
+        sys.error(s"Unsupported marshalling: $marshalling")
+    }
+    eventualEntity.flatMap { entity =>
+      sendAndUnmarhall(HttpRequest(HttpMethods.POST, uri, entity = entity))
+    }
   }
 
-  private[api] def pipeline[T](request: HttpRequest)(implicit actorRefFactory: ActorRefFactory, manifest: Manifest[T], unmarshaller: FromResponseUnmarshaller[T]): Future[T] = {
-    import actorRefFactory.dispatcher
-    val pipeline = sendReceive ~> unmarshal[T]
-    pipeline(request)
+  private[api] def sendAndUnmarhall[T](httpRequest: HttpRequest)
+                                      (implicit system: ActorSystem,
+                                       manifest: Manifest[T],
+                                       unmarshaller: FromResponseUnmarshaller[T],
+                                       materializer: FlowMaterializer): Future[T] = {
+    import system.dispatcher
+    sendRequest(httpRequest).flatMap { a =>
+      unmarshaller(a)
+    }.map(_.value)
   }
 
-  private[api] def request(request: HttpRequest)(implicit actorRefFactory: ActorRefFactory): Future[HttpResponse] = {
-    import actorRefFactory.dispatcher
-    val pipeline = sendReceive
-    pipeline(request)
+  private[api] def sendRequest(request: HttpRequest)
+                              (implicit system: ActorSystem, materializer: FlowMaterializer): Future[HttpResponse] = {
+    implicit val timeout = Timeout(30.seconds)
+    import system.dispatcher
+
+    (IO(Http) ? Connect(request.uri.authority.host.address(), request.uri.effectivePort)).mapTo[OutgoingConnection]
+      .flatMap { connection =>
+      Flow(List(request -> 'NoContext)).produceTo(connection.processor)
+      Flow(connection.processor).map(_._1).toFuture()
+    }
   }
 
-  // TODO: Return streaming data
-  def requestChunkedLines(request: HttpRequest)(implicit system: ActorSystem): Future[Seq[String]] = {
-    val promise = Promise[Seq[String]]()
-    system.actorOf(Props(new Actor {
-      IO(Http) ! request
-
-      def receive = {
-        case response: HttpResponse =>
-          val lines = response.entity.asString.lines.filter(_.nonEmpty)
-          val list = lines.toList
-          promise.success(list)
-        case start: ChunkedResponseStart =>
-          val lines = start.message.entity.asString.lines.filter(_.nonEmpty)
-          context.become(receiveStream(Stack(lines.toList: _*)))
+  private[api] def requestChunkedLines(httpRequest: HttpRequest)
+                                      (implicit system: ActorSystem, materializer: FlowMaterializer): Future[Flow[String]] = {
+    import system.dispatcher
+    sendRequest(httpRequest).map { response =>
+      response.entity match {
+        case HttpEntity.Chunked(contentType, chunks) =>
+          Flow(chunks)
+            .map(_.data().utf8String)
+        case entity =>
+          sys.error(s"Unsupported entity: $entity")
       }
-
-      def receiveStream(lines: Stack[String]): Receive = {
-        case chunk: MessageChunk =>
-          val updatedLines = lines ++ chunk.data.asString.lines.filter(_.nonEmpty)
-          context.become(receiveStream(updatedLines))
-        case end: ChunkedMessageEnd =>
-          promise.success(lines)
-      }
-    }))
-    promise.future
+    }
   }
 }
