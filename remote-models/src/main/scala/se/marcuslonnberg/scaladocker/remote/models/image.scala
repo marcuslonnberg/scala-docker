@@ -11,7 +11,9 @@ case class Image(created: DateTime,
 
 sealed trait ImageIdentifier
 
-case class ImageId(hash: String) extends ImageIdentifier
+case class ImageId(hash: String) extends ImageIdentifier {
+  def shortHash = hash.take(12)
+}
 
 object ImageName {
   def apply(name: String): ImageName = {
@@ -52,4 +54,4 @@ case class ImageName(registry: Option[String] = None, namespace: Option[String] 
   }
 }
 
-case object NoImageName extends ImageIdentifier
+case object MissingImageName extends ImageIdentifier

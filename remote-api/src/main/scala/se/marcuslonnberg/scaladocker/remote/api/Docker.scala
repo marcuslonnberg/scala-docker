@@ -97,7 +97,7 @@ trait ImageCommands extends DockerCommands {
 }
 
 trait ContainerCommands extends DockerCommands {
-  def list(all: Boolean = false) = getRequest[Seq[ContainerStatus]](Path / "containers" / "json")
+  def list(all: Boolean = false) = getRequest[Seq[ContainerStatus]](Path / "containers" / "json", Query("all" -> all.toString))
 
   def get(id: ContainerId) = getRequest[ContainerInfo](Path / "containers" / id.hash / "json")
 

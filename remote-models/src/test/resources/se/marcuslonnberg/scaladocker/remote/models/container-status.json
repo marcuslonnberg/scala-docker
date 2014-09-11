@@ -1,0 +1,18 @@
+{
+    "Command": "bash",
+    "Created": 1409179933,
+    "Id": "6f178a7b27aace53f3ef34c9493eb9fe2939583ddad9d6ad95b1a361ebb7b667",
+    "Image": "ubuntu:latest",
+    "Names": [
+        "/focused_almeida"
+    ],
+    "Ports": [
+        {
+            "IP": "0.0.0.0",
+            "PrivatePort": 8080,
+            "PublicPort": 8080,
+            "Type": "tcp"
+        }
+    ],
+    "Status": "Up 9 hours"
+}

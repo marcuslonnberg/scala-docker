@@ -2,8 +2,25 @@ package se.marcuslonnberg.scaladocker.remote.models
 
 import com.github.nscala_time.time.Imports._
 import org.joda.time.format.ISODateTimeFormat
-import org.json4s.FieldSerializer._
+import org.json4s.JsonAST.JObject
 import org.json4s._
+import org.json4s.JsonDSL._
+import se.marcuslonnberg.scaladocker.remote.models.json._
+
+object JsonFormatHelpers {
+  def extractField[T](fieldName: String)(implicit obj: JObject, manifest: Manifest[T], formats: Formats): T = {
+    try {
+      (obj \ fieldName).extract[T]
+    } catch {
+      case e: RuntimeException =>
+        throw new MappingException(s"Could not find field '$fieldName' or extract a value of type: $manifest", e)
+    }
+  }
+
+  def extractFieldOpt[T](fieldName: String)(implicit obj: JObject, manifest: Manifest[T], formats: Formats): Option[T] = {
+    (obj \ fieldName).extractOpt[T]
+  }
+}
 
 object JsonFormats {
 
@@ -44,9 +61,9 @@ object JsonFormats {
   }))
 
   val ContainerLinkFormat = new CustomSerializer[ContainerLink](formats => ( {
-    case JString(link) => ContainerLink.parse(link)
+    case JString(ContainerLink(link)) => link
   }, {
-    case link: ContainerLink => JString(link.link)
+    case link: ContainerLink => JString(link.mkString)
   }))
 
   val DateTimeFormat = new CustomSerializer[DateTime](formats => ( {
@@ -64,26 +81,64 @@ object JsonFormats {
     case Some(string: String) => JString(string)
   }))
 
+  def deserializePortBindings(value: JValue)(implicit formats: Formats): Map[Port, Seq[PortBinding]] = {
+    value match {
+      case JObject(bindings) =>
+        bindings.obj.map {
+          case (Port(port), value) =>
+            val list = value.extractOrElse[List[PortBinding]](List.empty[PortBinding])
+            port -> list
+        }.toMap
+      case _ =>
+        Map.empty
+    }
+  }
+
+  def serializePortBindings(bindings: Map[Port, Seq[PortBinding]])(implicit formats: Formats) = {
+    val fields = bindings.map {
+      case (port, bindings) =>
+        port.toString -> Extraction.decompose(bindings)
+    }.toList
+    JObject(fields)
+  }
+
+  def deserializeVolumes(volumesRaw: JObject, volumesRW: JObject): List[Volume] = {
+    volumesRaw.obj.map {
+      case (hostPath, JString(containerPath)) =>
+        val rw = volumesRW.values.get(containerPath).exists {
+          case value: Boolean => value
+          case _ => false
+        }
+        Volume(containerPath, hostPath, rw)
+      case _ => sys.error("Could not parse volumes")
+    }
+  }
+
+  def serializeVolumes(volumes: List[Volume]): (Map[String, String], Map[String, Boolean]) = {
+    val (vol, volRw) = volumes.map { volume =>
+      (volume.containerPath -> volume.hostPath,
+      volume.containerPath -> volume.rw)
+    }.unzip
+
+    (vol.toMap, volRw.toMap)
+  }
+
   def apply(): Formats = DefaultFormats +
-    camelCaseFieldSerializer[Port](deserializer = renameFrom("IP", "ip")) +
-    camelCaseFieldSerializer[ContainerStatus]() +
     camelCaseFieldSerializer[Image]() +
-    camelCaseFieldSerializer[ContainerConfig]() +
-    camelCaseFieldSerializer[HostConfig]() +
     camelCaseFieldSerializer[CreateContainerResponse]() +
     camelCaseFieldSerializer[ContainerState]() +
-    camelCaseFieldSerializer[NetworkSettings](deserializer = renameFrom("IPAddress", "ipAddress") orElse
-      renameFrom("IPPrefixLen", "ipPrefixLen")) +
-    camelCaseFieldSerializer[ContainerInfo](deserializer = renameFrom("ID", "id")) +
+    camelCaseFieldSerializer[RestartPolicy]() +
+    camelCaseFieldSerializer[DeviceMapping]() +
     ImageNameFormat +
     ImageIdFormat +
     ContainerIdFormat +
     ContainerLinkFormat +
     DateTimeFormat +
-    OptionStringFormat
-
-  def objectKeysToArray(fieldName: String) = PartialFunction[JField, JField] {
-    case JField(`fieldName`, volumes) =>
-      JField(lowerCamelCase(fieldName), JArray(volumes.asInstanceOf[JObject].obj.map(v => JString(v._1))))
-  }
+    OptionStringFormat +
+    NetworkSettingsSerializer +
+    HostConfigSerializer +
+    ContainerInfoSerializer +
+    ContainerConfigSerializer +
+    ContainerStatusSerializer +
+    PortBindingSerializer
 }
