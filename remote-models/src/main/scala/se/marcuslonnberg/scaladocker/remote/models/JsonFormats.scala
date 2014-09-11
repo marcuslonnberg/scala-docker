@@ -70,7 +70,7 @@ object JsonFormats {
     case JInt(seconds) => new DateTime((seconds * 1000).toLong)
     case JString(date) => ISODateTimeFormat.dateTime().parseDateTime(date)
   }, {
-    case dateTime: DateTime => JInt(dateTime.millis / 1000)
+    case dateTime: DateTime => JInt(dateTime.getMillis / 1000)
   }))
 
   val OptionStringFormat = new CustomSerializer[Option[String]](formats => ( {

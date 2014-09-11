@@ -8,13 +8,13 @@ object Dependencies {
   val json4sNative = "org.json4s" %% "json4s-native" % json4sVersion
   val json4sExt = "org.json4s" %% "json4s-ext" % json4sVersion
 
-  val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "1.0.0"
+  val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "1.4.0"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   val akkaStream = "com.typesafe.akka" %% "akka-stream-experimental" % akkaHttpStreamsVersion
   val akkaHttp = "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpStreamsVersion
 
-  val scalaTest = "org.scalatest" %% "scalatest" % "2.1.6" % "test"
+  val scalaTest = "org.scalatest" %% "scalatest" % "2.2.2" % "test"
 
   object Projects {
     val remoteApi = Seq(akkaActor, akkaStream, akkaHttp, scalaTest)
