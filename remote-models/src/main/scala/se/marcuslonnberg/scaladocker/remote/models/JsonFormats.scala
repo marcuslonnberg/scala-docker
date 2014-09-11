@@ -75,6 +75,7 @@ object JsonFormats {
 
   val OptionStringFormat = new CustomSerializer[Option[String]](formats => ( {
     case JString("") => None
+    case JString("0001-01-01T00:00:00Z") => None
     case JString(string) => Some(string)
   }, {
     case None => JNothing
@@ -117,7 +118,7 @@ object JsonFormats {
   def serializeVolumes(volumes: List[Volume]): (Map[String, String], Map[String, Boolean]) = {
     val (vol, volRw) = volumes.map { volume =>
       (volume.containerPath -> volume.hostPath,
-      volume.containerPath -> volume.rw)
+        volume.containerPath -> volume.rw)
     }.unzip
 
     (vol.toMap, volRw.toMap)

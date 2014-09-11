@@ -116,7 +116,7 @@ case class ContainerState(running: Boolean,
                           restarting: Boolean,
                           pid: Int,
                           exitCode: Int,
-                          startedAt: DateTime,
+                          startedAt: Option[DateTime] = None,
                           finishedAt: Option[DateTime] = None)
 
 case class NetworkSettings(ipAddress: String,
