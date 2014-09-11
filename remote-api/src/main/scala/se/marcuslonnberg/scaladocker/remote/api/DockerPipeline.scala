@@ -5,6 +5,7 @@ import akka.http.Http
 import akka.http.Http.{Connect, OutgoingConnection}
 import akka.http.marshalling.Marshaller
 import akka.http.marshalling.Marshalling.WithFixedCharset
+import akka.http.model.Uri.{Query, Path}
 import akka.http.model._
 import akka.http.unmarshalling.FromResponseUnmarshaller
 import akka.io.IO
@@ -19,12 +20,16 @@ import scala.concurrent.duration._
 trait DockerPipeline extends JsonSupport {
   private[api] def baseUri: Uri
 
+  private[api] def createUri(path: Path, query: Query): Uri = {
+    baseUri.withPath(baseUri.path ++ path).withQuery(query)
+  }
+
   private[api] def getRequest[T](path: Uri.Path, query: Uri.Query = Uri.Query.Empty)
                                 (implicit system: ActorSystem,
                                  manifest: Manifest[T],
                                  unmarshaller: FromResponseUnmarshaller[T],
                                  materializer: FlowMaterializer) = {
-    val uri = baseUri.withPath(path).withQuery(query)
+    val uri = createUri(path, query)
     sendAndUnmarhall(HttpRequest(HttpMethods.GET, uri))
   }
 
@@ -37,7 +42,7 @@ trait DockerPipeline extends JsonSupport {
                                      marshaller: Marshaller[F, HttpEntity.Regular],
                                      materializer: FlowMaterializer) = {
     import system.dispatcher
-    val uri = baseUri.withPath(path).withQuery(query)
+    val uri = createUri(path, query)
     val eventualEntity = marshaller(content).map {
       case marshalling: WithFixedCharset[HttpEntity.Regular] =>
         marshalling.marshal()

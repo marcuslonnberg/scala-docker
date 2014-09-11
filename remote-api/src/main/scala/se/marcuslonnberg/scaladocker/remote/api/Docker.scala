@@ -3,7 +3,7 @@ package se.marcuslonnberg.scaladocker.remote.api
 import akka.actor.ActorSystem
 import akka.http.model.HttpMethods._
 import akka.http.model.Uri._
-import akka.http.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
+import akka.http.model._
 import akka.stream.FlowMaterializer
 import akka.stream.scaladsl.Flow
 import org.json4s.JObject
@@ -13,14 +13,19 @@ import se.marcuslonnberg.scaladocker.remote.models._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
-case class DockerClient(hostname: String, port: Int = 2375)(implicit system: ActorSystem, materializer: FlowMaterializer) {
+object DockerClient {
+  def apply(host: String, port: Int = 2375)(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient =
+    apply(Uri(s"http://$host:$port"))
+}
+
+case class DockerClient(baseUri: Uri)(implicit system: ActorSystem, materializer: FlowMaterializer) {
   val containers = new ContainerCommands with Context
   val host = new HostCommands with Context
   val images = new ImageCommands with Context
 
   trait Context {
     this: DockerCommands =>
-    override def baseUri = Uri(s"http://$hostname:$port")
+    override def baseUri = DockerClient.this.baseUri
 
     implicit def system = DockerClient.this.system
 
