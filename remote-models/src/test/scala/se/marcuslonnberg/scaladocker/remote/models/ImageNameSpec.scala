@@ -9,7 +9,7 @@ class ImageNameSpec extends FlatSpec with Matchers {
       registry = Some("registry.tld:5000"),
       namespace = Some("namespace"),
       repository = "repository",
-      tag = Some("tag"))
+      tag = "tag")
   }
 
   it should "parse 'registry.tld/repository:tag'" in {
@@ -18,7 +18,7 @@ class ImageNameSpec extends FlatSpec with Matchers {
       registry = Some("registry.tld"),
       namespace = None,
       repository = "repository",
-      tag = Some("tag"))
+      tag = "tag")
   }
 
   it should "parse 'registry:5000/repository:tag'" in {
@@ -27,7 +27,7 @@ class ImageNameSpec extends FlatSpec with Matchers {
       registry = Some("registry:5000"),
       namespace = None,
       repository = "repository",
-      tag = Some("tag"))
+      tag = "tag")
   }
 
   it should "parse 'localhost/repository:tag'" in {
@@ -36,7 +36,7 @@ class ImageNameSpec extends FlatSpec with Matchers {
       registry = Some("localhost"),
       namespace = None,
       repository = "repository",
-      tag = Some("tag"))
+      tag = "tag")
   }
 
   it should "parse 'namespace/repository:tag'" in {
@@ -45,7 +45,7 @@ class ImageNameSpec extends FlatSpec with Matchers {
       registry = None,
       namespace = Some("namespace"),
       repository = "repository",
-      tag = Some("tag"))
+      tag = "tag")
   }
 
   it should "parse 'repository:tag'" in {
@@ -54,7 +54,7 @@ class ImageNameSpec extends FlatSpec with Matchers {
       registry = None,
       namespace = None,
       repository = "repository",
-      tag = Some("tag"))
+      tag = "tag")
   }
 
   it should "parse 'repository'" in {
@@ -62,8 +62,7 @@ class ImageNameSpec extends FlatSpec with Matchers {
     name shouldEqual ImageName(
       registry = None,
       namespace = None,
-      repository = "repository",
-      tag = None)
+      repository = "repository")
   }
 
   it should "not parse 'registry/namespace/repository'" in {

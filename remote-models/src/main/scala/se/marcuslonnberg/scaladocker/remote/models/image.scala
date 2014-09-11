@@ -13,6 +13,8 @@ sealed trait ImageIdentifier
 
 case class ImageId(hash: String) extends ImageIdentifier {
   def shortHash = hash.take(12)
+
+  override def toString = hash
 }
 
 object ImageName {
@@ -35,9 +37,9 @@ object ImageName {
 
     val (repo, tag) = repoAndTag.split(":", 2) match {
       case Array(r, t) =>
-        (r, Some(t))
+        (r, t)
       case Array(r) =>
-        (r, None)
+        (r, "latest")
     }
 
     ImageName(registry, namespace, repo, tag)
@@ -45,13 +47,14 @@ object ImageName {
 }
 
 case class ImageName(registry: Option[String] = None, namespace: Option[String] = None,
-                     repository: String, tag: Option[String] = None) extends ImageIdentifier {
+                     repository: String, tag: String = "latest") extends ImageIdentifier {
   override def toString = {
     val registryString = registry.fold("")(_ + "/")
     val namespaceString = namespace.fold("")(_ + "/")
-    val tagString = tag.fold("")(":" + _)
-    registryString + namespaceString + repository + tagString
+    registryString + namespaceString + repository + ":" + tag
   }
 }
 
-case object MissingImageName extends ImageIdentifier
+case object MissingImageName extends ImageIdentifier {
+  override def toString = "<none>"
+}

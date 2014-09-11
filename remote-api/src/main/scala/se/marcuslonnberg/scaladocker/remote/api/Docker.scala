@@ -72,7 +72,7 @@ trait ImageCommands extends DockerCommands {
   def create(imageName: ImageName): Future[Flow[Progress]] = {
     val parameters = Map(
       "fromImage" -> Option(imageName.repository),
-      "tag" -> imageName.tag,
+      "tag" -> Option(imageName.tag),
       "registry" -> imageName.registry,
       "repo" -> imageName.namespace)
 
