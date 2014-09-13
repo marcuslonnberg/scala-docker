@@ -14,10 +14,12 @@ object Dependencies {
   val akkaStream = "com.typesafe.akka" %% "akka-stream-experimental" % akkaHttpStreamsVersion
   val akkaHttp = "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpStreamsVersion
 
+  val jtar = "org.kamranzafar" % "jtar" % "2.2"
+
   val scalaTest = "org.scalatest" %% "scalatest" % "2.2.2" % "test"
 
   object Projects {
-    val remoteApi = Seq(akkaActor, akkaStream, akkaHttp, scalaTest)
+    val remoteApi = Seq(akkaActor, akkaStream, akkaHttp, jtar, scalaTest)
     val remoteModels = Seq(json4sNative, json4sExt, nscalaTime, scalaTest)
   }
 

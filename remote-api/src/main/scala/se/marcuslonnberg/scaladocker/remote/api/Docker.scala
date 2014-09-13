@@ -21,7 +21,7 @@ object DockerClient {
 case class DockerClient(baseUri: Uri)(implicit system: ActorSystem, materializer: FlowMaterializer) {
   val containers = new ContainerCommands with Context
   val host = new HostCommands with Context
-  val images = new ImageCommands with Context
+  val images = new ImageCommands with BuildCommand with Context
 
   trait Context {
     this: DockerCommands =>
@@ -74,7 +74,7 @@ trait HostCommands extends DockerCommands {
 trait ImageCommands extends DockerCommands {
   def list = getRequest[Seq[Image]](Path / "images" / "json")
 
-  def create(imageName: ImageName): Future[Flow[Progress]] = {
+  def create(imageName: ImageName): Future[Flow[CreateMessage]] = {
     val parameters = Map(
       "fromImage" -> Option(imageName.repository),
       "tag" -> Option(imageName.tag),
@@ -90,10 +90,10 @@ trait ImageCommands extends DockerCommands {
         .filter(_.nonEmpty)
         .map { line =>
         val obj = read[JObject](line)
-        obj.extractOpt[ProgressStatus]
-          .orElse(obj.extractOpt[ImageStatus])
-          .orElse(obj.extractOpt[Status])
-          .orElse(obj.extractOpt[Error])
+        obj.extractOpt[CreateMessages.Progress]
+          .orElse(obj.extractOpt[CreateMessages.ImageStatus])
+          .orElse(obj.extractOpt[CreateMessages.Status])
+          .orElse(obj.extractOpt[CreateMessages.Error])
       }.collect {
         case Some(v) => v
       }
