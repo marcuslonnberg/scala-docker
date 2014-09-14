@@ -70,11 +70,11 @@ trait DockerCommands extends DockerPipeline {
 }
 
 trait HostCommands extends DockerCommands {
-  def ping = getRequest[String](Path / "_ping").map(_ == "OK")
+  def ping: Future[Boolean] = getRequest[String](Path / "_ping").map(_ == "OK")
 }
 
 trait ImageCommands extends DockerCommands {
-  def list = getRequest[Seq[Image]](Path / "images" / "json")
+  def list: Future[Seq[Image]] = getRequest[Seq[Image]](Path / "images" / "json")
 
   def create(imageName: ImageName): Publisher[CreateMessage] = {
     val parameters = Map(
@@ -99,6 +99,21 @@ trait ImageCommands extends DockerCommands {
     }.collect {
       case Some(v) => v
     }.toPublisher()
+  }
+
+  def tag(from: ImageName, to: ImageName, force: Boolean = false): Future[Boolean] = {
+    val parameters = Map(
+      "repo" -> (to.registry.fold("")(_ + "/") + to.namespace.fold("")(_ + "/") + to.repository),
+      "tag" -> to.tag,
+      "force" -> force.toString)
+
+    val uri = baseUri
+      .withPath(Path / "images" / from.toString / "tag")
+      .withQuery(parameters)
+
+    sendRequest(HttpRequest(POST, uri)).map { response =>
+      response.status == StatusCodes.Created
+    }
   }
 }
 
