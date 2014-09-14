@@ -5,14 +5,14 @@ import akka.http.Http
 import akka.http.Http.{Connect, OutgoingConnection}
 import akka.http.marshalling.Marshaller
 import akka.http.marshalling.Marshalling.WithFixedCharset
-import akka.http.model.Uri.{Query, Path}
+import akka.http.model.Uri.{Path, Query}
 import akka.http.model._
 import akka.http.unmarshalling.FromResponseUnmarshaller
 import akka.io.IO
 import akka.pattern.ask
-import akka.stream.FlowMaterializer
-import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl2._
 import akka.util.Timeout
+import org.reactivestreams.Publisher
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -40,7 +40,7 @@ trait DockerPipeline extends JsonSupport {
                                      manifestTo: Manifest[T],
                                      unmarshaller: FromResponseUnmarshaller[T],
                                      marshaller: Marshaller[F, HttpEntity.Regular],
-                                     materializer: FlowMaterializer) = {
+                                     materializer: FlowMaterializer): Future[T] = {
     import system.dispatcher
     val uri = createUri(path, query)
     val eventualEntity = marshaller(content).map {
@@ -49,7 +49,7 @@ trait DockerPipeline extends JsonSupport {
       case marshalling =>
         sys.error(s"Unsupported marshalling: $marshalling")
     }
-    eventualEntity.flatMap { entity =>
+    eventualEntity.toFuture.flatMap { entity =>
       sendAndUnmarhall(HttpRequest(HttpMethods.POST, uri, entity = entity))
     }
   }
@@ -60,9 +60,9 @@ trait DockerPipeline extends JsonSupport {
                                        unmarshaller: FromResponseUnmarshaller[T],
                                        materializer: FlowMaterializer): Future[T] = {
     import system.dispatcher
-    sendRequest(httpRequest).flatMap { a =>
-      unmarshaller(a)
-    }.map(_.value)
+    sendRequest(httpRequest).flatMap { response =>
+      unmarshaller(response).toFuture
+    }
   }
 
   private[api] def sendRequest(request: HttpRequest)
@@ -72,22 +72,39 @@ trait DockerPipeline extends JsonSupport {
 
     (IO(Http) ? Connect(request.uri.authority.host.address(), request.uri.effectivePort)).mapTo[OutgoingConnection]
       .flatMap { connection =>
-      Flow(List(request -> 'NoContext)).produceTo(connection.processor)
-      Flow(connection.processor).map(_._1).toFuture()
+
+      FlowFrom(List(request -> 'NoContext)).publishTo(connection.processor)
+
+      val responseSink = FutureSink[HttpResponse]
+      val materializedFlow = FlowFrom(connection.processor).map(_._1).withSink(responseSink).run()
+      responseSink.future(materializedFlow)
     }
   }
 
   private[api] def requestChunkedLines(httpRequest: HttpRequest)
-                                      (implicit system: ActorSystem, materializer: FlowMaterializer): Future[Flow[String]] = {
+                                      (implicit system: ActorSystem, materializer: FlowMaterializer): Publisher[String] = {
     import system.dispatcher
+
+    val sub = SubscriberSource[HttpEntity.ChunkStreamPart]()
+    val out = PublisherSink[String]
+
+    val flow = FlowFrom[HttpEntity.ChunkStreamPart].withSource(sub).map { chunk =>
+      chunk.data().utf8String
+    }.withSink(out).run()
+
+    val subscriber = sub.subscriber(flow)
+
     sendRequest(httpRequest).map { response =>
       response.entity match {
         case HttpEntity.Chunked(contentType, chunks) =>
-          Flow(chunks)
-            .map(_.data().utf8String)
+          chunks.subscribe(subscriber)
         case entity =>
-          sys.error(s"Unsupported entity: $entity")
+          subscriber.onError {
+            sys.error(s"Unsupported entity: $entity")
+          }
       }
     }
+
+    out.publisher(flow)
   }
 }

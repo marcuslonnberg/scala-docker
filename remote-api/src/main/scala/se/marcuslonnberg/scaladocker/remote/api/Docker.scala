@@ -4,10 +4,10 @@ import akka.actor.ActorSystem
 import akka.http.model.HttpMethods._
 import akka.http.model.Uri._
 import akka.http.model._
-import akka.stream.FlowMaterializer
-import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl2._
 import org.json4s.JObject
 import org.json4s.native.Serialization._
+import org.reactivestreams.Publisher
 import se.marcuslonnberg.scaladocker.remote.models._
 
 import scala.concurrent.duration.Duration
@@ -39,15 +39,17 @@ case class DockerClient(baseUri: Uri)(implicit system: ActorSystem, materializer
   def run(containerConfig: ContainerConfig, hostConfig: HostConfig)(implicit materializer: FlowMaterializer): Future[ContainerId] = {
     runLocal(containerConfig, hostConfig).recoverWith {
       case _: UnknownResponseException =>
-        images.create(containerConfig.image).flatMap { r =>
-          val eventualError = r.collect { case e: Error => e}.toFuture
-          eventualError.map {
-            case error =>
-              throw new CreateImageException(containerConfig.image)
-          }.recoverWith {
-            case e: NoSuchElementException =>
-              runLocal(containerConfig, hostConfig)
-          }
+        val create = images.create(containerConfig.image)
+
+        val eventualErrorSink = FutureSink[Error]
+        val mat = FlowFrom(create).collect { case e: Error => e}.withSink(eventualErrorSink).run()
+
+        eventualErrorSink.future(mat).map {
+          case error =>
+            throw new CreateImageException(containerConfig.image)
+        }.recoverWith {
+          case e: NoSuchElementException =>
+            runLocal(containerConfig, hostConfig)
         }
     }
   }
@@ -74,7 +76,7 @@ trait HostCommands extends DockerCommands {
 trait ImageCommands extends DockerCommands {
   def list = getRequest[Seq[Image]](Path / "images" / "json")
 
-  def create(imageName: ImageName): Future[Flow[CreateMessage]] = {
+  def create(imageName: ImageName): Publisher[CreateMessage] = {
     val parameters = Map(
       "fromImage" -> Option(imageName.repository),
       "tag" -> Option(imageName.tag),
@@ -85,19 +87,18 @@ trait ImageCommands extends DockerCommands {
       .withPath(Path / "images" / "create")
       .withQuery(parameters.mapValues(_.getOrElse("")))
 
-    requestChunkedLines(HttpRequest(POST, uri)).map { lines =>
-      lines
-        .filter(_.nonEmpty)
-        .map { line =>
-        val obj = read[JObject](line)
-        obj.extractOpt[CreateMessages.Progress]
-          .orElse(obj.extractOpt[CreateMessages.ImageStatus])
-          .orElse(obj.extractOpt[CreateMessages.Status])
-          .orElse(obj.extractOpt[CreateMessages.Error])
-      }.collect {
-        case Some(v) => v
-      }
-    }
+    FlowFrom(requestChunkedLines(HttpRequest(POST, uri)))
+      .filter(_.nonEmpty)
+      .map { line =>
+      val obj = read[JObject](line)
+      val out: Option[CreateMessage] = obj.extractOpt[CreateMessages.Progress]
+        .orElse(obj.extractOpt[CreateMessages.ImageStatus])
+        .orElse(obj.extractOpt[CreateMessages.Status])
+        .orElse(obj.extractOpt[CreateMessages.Error])
+      out
+    }.collect {
+      case Some(v) => v
+    }.toPublisher()
   }
 }
 
@@ -131,7 +132,7 @@ trait ContainerCommands extends DockerCommands {
     sendRequest(HttpRequest(DELETE, uri)) map containerResponse(id)
   }
 
-  def logs(id: ContainerId, follow: Boolean = false, stdout: Boolean = true, stderr: Boolean = false, timestamps: Boolean = false): Future[Flow[String]] = {
+  def logs(id: ContainerId, follow: Boolean = false, stdout: Boolean = true, stderr: Boolean = false, timestamps: Boolean = false): Publisher[String] = {
     val uri = baseUri
       .withPath(Path / "containers" / id.hash / "logs")
       .withQuery(

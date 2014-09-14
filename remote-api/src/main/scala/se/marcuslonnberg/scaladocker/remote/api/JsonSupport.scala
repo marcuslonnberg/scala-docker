@@ -5,8 +5,8 @@ import java.lang.reflect.InvocationTargetException
 import akka.actor.ActorRefFactory
 import akka.http.marshalling.Marshaller
 import akka.http.model.{HttpCharsets, HttpEntity, HttpResponse, MediaTypes}
-import akka.http.unmarshalling.{Unmarshaller, Unmarshalling}
-import akka.stream.FlowMaterializer
+import akka.http.unmarshalling.Unmarshaller
+import akka.stream.scaladsl2.FlowMaterializer
 import org.json4s.native.Serialization
 import org.json4s.{Formats, MappingException}
 import se.marcuslonnberg.scaladocker.remote.models.JsonFormats
@@ -29,13 +29,14 @@ trait JsonSupport {
       case x: HttpEntity =>
         import actorRefFactory.dispatcher
         val timeout = 1.second
-        x.toStrict(timeout, materializer).map { ent =>
+        implicit val temp = akka.stream.FlowMaterializer(materializer.settings)
+        x.toStrict(timeout).map { ent =>
           val value =
             try serialization.read[T](ent.data.utf8String)
             catch {
               case MappingException("unknown error", ite: InvocationTargetException) => throw ite.getCause
             }
-          Unmarshalling.Success(value)
+          value
         }
     })
 

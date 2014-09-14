@@ -3,18 +3,17 @@ package se.marcuslonnberg.scaladocker.remote.api
 import java.io._
 import java.nio.file.Files
 
-import akka.http.model._
 import akka.http.model.Uri.Path
-import akka.stream.scaladsl.Flow
+import akka.http.model._
+import akka.stream.scaladsl2.FlowFrom
 import org.json4s.JObject
 import org.json4s.native.Serialization._
 import org.kamranzafar.jtar.{TarEntry, TarOutputStream}
-import se.marcuslonnberg.scaladocker.remote.models.{BuildMessages, BuildMessage, ImageName}
-
-import scala.concurrent.Future
+import org.reactivestreams.Publisher
+import se.marcuslonnberg.scaladocker.remote.models.{BuildMessage, BuildMessages, ImageName}
 
 trait BuildCommand extends DockerCommands {
-  def build(imageName: ImageName, tarFile: File): Future[Flow[BuildMessage]] = {
+  def build(imageName: ImageName, tarFile: File): Publisher[BuildMessage] = {
     val query = Uri.Query(
       "t" -> imageName.toString)
     val uri = createUri(Path / "build", query)
@@ -22,17 +21,16 @@ trait BuildCommand extends DockerCommands {
     val entity = HttpEntity(ContentType(MediaType.custom("application/tar")), Files.readAllBytes(tarFile.toPath))
     val request = HttpRequest(HttpMethods.POST, uri, entity = entity)
 
-    requestChunkedLines(request).map { lines =>
-      lines
-        .filter(_.nonEmpty)
-        .map { line =>
-        val obj = read[JObject](line)
-        obj.extractOpt[BuildMessages.Output]
-          .orElse(obj.extractOpt[BuildMessages.Error])
-      }.collect {
-        case Some(v) => v
-      }
-    }
+    FlowFrom(requestChunkedLines(request))
+      .filter(_.nonEmpty)
+      .map { line =>
+      val obj = read[JObject](line)
+      val maybeMessage: Option[BuildMessage] = obj.extractOpt[BuildMessages.Output]
+        .orElse(obj.extractOpt[BuildMessages.Error])
+      maybeMessage
+    }.collect {
+      case Some(v) => v
+    }.toPublisher()
   }
 }
 
