@@ -14,6 +14,14 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
 object DockerClient {
+  def apply()(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient = {
+    val key = "DOCKER_HOST"
+    val value = sys.env.get(key).filter(_.nonEmpty).getOrElse {
+      sys.error(s"Environment variable $key was not set")
+    }
+    apply(Uri(value))
+  }
+
   def apply(host: String, port: Int = 2375)(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient =
     apply(Uri(s"http://$host:$port"))
 }
@@ -111,9 +119,21 @@ trait ImageCommands extends DockerCommands {
       .withPath(Path / "images" / from.toString / "tag")
       .withQuery(parameters)
 
-    sendRequest(HttpRequest(POST, uri)).map { response =>
-      response.status == StatusCodes.Created
-    }
+    sendRequest(HttpRequest(POST, uri))
+      .map(_.status == StatusCodes.Created)
+  }
+
+  def delete(name: ImageName, force: Boolean = false, noPrune: Boolean = false): Future[Boolean] = {
+    val parameters = Map(
+      "force" -> force.toString,
+      "noprune" -> noPrune.toString)
+
+    val uri = baseUri
+      .withPath(Path / "images" / name.toString)
+      .withQuery(parameters)
+
+    sendRequest(HttpRequest(DELETE, uri))
+      .map(_.status == StatusCodes.OK)
   }
 }
 
