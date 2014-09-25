@@ -12,7 +12,7 @@ object ContainerStatusSerializer extends CustomSerializer[ContainerStatus](impli
     implicit val o = obj
 
     val command = extractField[String]("Command")
-    val created = extractField[DateTime]("Created")
+    val created = new DateTime(extractField[Long]("Created") * 1000)
     val id = extractField[ContainerId]("Id")
     val image = extractField[ImageName]("Image")
     val names = extractField[List[String]]("Names")
@@ -59,7 +59,7 @@ object ContainerStatusSerializer extends CustomSerializer[ContainerStatus](impli
     }.flatten
 
     ("Command" -> cs.command) ~
-      ("Created" -> Extraction.decompose(cs.created)) ~
+      ("Created" -> cs.created.getMillis / 1000) ~
       ("Id" -> Extraction.decompose(cs.id)) ~
       ("Image" -> Extraction.decompose(cs.image)) ~
       ("Names" -> cs.names) ~

@@ -1,10 +1,8 @@
 package se.marcuslonnberg.scaladocker.remote.models
 
-import com.github.nscala_time.time.Imports._
-import org.joda.time.format.ISODateTimeFormat
 import org.json4s.JsonAST.JObject
-import org.json4s._
 import org.json4s.JsonDSL._
+import org.json4s._
 import se.marcuslonnberg.scaladocker.remote.models.json._
 
 object JsonFormatHelpers {
@@ -66,16 +64,8 @@ object JsonFormats {
     case link: ContainerLink => JString(link.mkString)
   }))
 
-  val DateTimeFormat = new CustomSerializer[DateTime](formats => ( {
-    case JInt(seconds) => new DateTime((seconds * 1000).toLong)
-    case JString(date) => ISODateTimeFormat.dateTime().parseDateTime(date)
-  }, {
-    case dateTime: DateTime => JInt(dateTime.getMillis / 1000)
-  }))
-
   val OptionStringFormat = new CustomSerializer[Option[String]](formats => ( {
     case JString("") => None
-    case JString("0001-01-01T00:00:00Z") => None
     case JString(string) => Some(string)
   }, {
     case None => JNothing
@@ -124,22 +114,22 @@ object JsonFormats {
     (vol.toMap, volRw.toMap)
   }
 
-  def apply(): Formats = DefaultFormats +
-    camelCaseFieldSerializer[Image]() +
+  def apply(): Formats = DefaultFormats.lossless ++
+    org.json4s.ext.JodaTimeSerializers.all +
     camelCaseFieldSerializer[CreateContainerResponse]() +
-    camelCaseFieldSerializer[ContainerState]() +
     camelCaseFieldSerializer[RestartPolicy]() +
     camelCaseFieldSerializer[DeviceMapping]() +
     ImageNameFormat +
     ImageIdFormat +
     ContainerIdFormat +
     ContainerLinkFormat +
-    DateTimeFormat +
     OptionStringFormat +
+    ImageSerializer +
     NetworkSettingsSerializer +
     HostConfigSerializer +
     ContainerInfoSerializer +
     ContainerConfigSerializer +
     ContainerStatusSerializer +
+    ContainerStateSerializer +
     PortBindingSerializer
 }
