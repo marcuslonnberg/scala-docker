@@ -32,3 +32,5 @@ initialCommands in console :=
     |implicit val system = ActorSystem("scala-docker")
     |import system.dispatcher
     |implicit val mat = FlowMaterializer(MaterializerSettings())""".stripMargin
+
+publishMavenStyle := true
