@@ -4,18 +4,20 @@ name := "scala-docker"
 
 organization := "se.marcuslonnberg"
 
-version := "0.1.0"
+version := "0.1.0-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.11.2"
 
 lazy val `remote-models` = project
   .settings(organization := "se.marcuslonnberg")
   .settings(name := "scala-docker-remote-models")
+  .settings(version := "0.1.0-SNAPSHOT")
   .settings(libraryDependencies := Projects.remoteModels: _*)
 
 lazy val `remote-api` = project
   .settings(organization := "se.marcuslonnberg")
   .settings(name := "scala-docker-remote-api")
+  .settings(version := "0.1.0-SNAPSHOT")
   .settings(libraryDependencies := Projects.remoteApi: _*)
   .dependsOn(`remote-models`)
   .aggregate(`remote-models`)
