@@ -15,14 +15,13 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with FlatSp
 
   val busybox = ImageName("busybox")
 
-  "Container API" should "list all containers" in {
+  "Container API" should "list containers" in {
     val containerId = client.runLocal(ContainerConfig(busybox, cmd = List("ls", "/")), HostConfig()).futureValue
 
     val containers = client.containers.list(all = true).futureValue
 
     forAtLeast(1, containers) { container =>
       container.id shouldEqual containerId
-      container.image shouldEqual busybox
       container.command shouldEqual "ls /"
     }
   }
