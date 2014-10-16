@@ -1,6 +1,6 @@
 package se.marcuslonnberg.scaladocker.remote.models.json
 
-import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.DateTime
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.json4s._
@@ -8,12 +8,11 @@ import se.marcuslonnberg.scaladocker.remote.models.JsonFormatHelpers._
 import se.marcuslonnberg.scaladocker.remote.models._
 
 object ContainerStateSerializer extends CustomSerializer[ContainerState]({ implicit formats =>
-  val DateExtractor = """(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3})\d+Z""".r
-  val DateFormat = ISODateTimeFormat.dateTime
-  def extractDateTimeField(fieldName: String)(implicit obj: JObject) = {
-    extractFieldOpt[String](fieldName).filter(_ != "0001-01-01T00:00:00Z").map {
-      case DateExtractor(isoFormat) =>
-        DateFormat.parseDateTime(isoFormat + "Z")
+  def extractDateTimeField(fieldName: String)(implicit obj: JObject): Option[DateTime] = {
+    obj \ fieldName match {
+      case JString("0001-01-01T00:00:00Z") => None
+      case _ =>
+        extractFieldOpt[DateTime](fieldName)
     }
   }
 
