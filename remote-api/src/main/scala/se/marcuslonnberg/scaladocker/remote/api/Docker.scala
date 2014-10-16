@@ -79,11 +79,34 @@ trait DockerCommands extends DockerPipeline {
 }
 
 trait HostCommands extends DockerCommands {
-  def ping: Future[Boolean] = getRequest[String](Path / "_ping").map(_ == "OK")
+  def ping(): Future[Boolean] = {
+    sendGetRequest(Path / "_ping").map { response =>
+      response.status match {
+        case StatusCodes.OK =>
+          true
+        case _ =>
+          false
+      }
+    }.recover {
+      case _ => false
+    }
+  }
 }
 
 trait ImageCommands extends DockerCommands {
-  def list: Future[Seq[Image]] = getRequest[Seq[Image]](Path / "images" / "json")
+  def list(): Future[Seq[Image]] = {
+    sendGetRequest(Path / "images" / "json").flatMap { response =>
+      response.status match {
+        case StatusCodes.OK =>
+          val unmarshaller = implicitly[FromResponseUnmarshaller[Seq[Image]]]
+          unmarshaller(response)
+        case StatusCodes.InternalServerError =>
+          Future.failed(ServerErrorException(response.status, "")) // TODO: Use entity as message
+        case status =>
+          Future.failed(UnknownResponseException(status))
+      }
+    }
+  }
 
   def create(imageName: ImageName): Publisher[CreateMessage] = {
     val parameters = Map(
@@ -139,9 +162,37 @@ trait ImageCommands extends DockerCommands {
 }
 
 trait ContainerCommands extends DockerCommands {
-  def list(all: Boolean = false) = getRequest[Seq[ContainerStatus]](Path / "containers" / "json", Query("all" -> all.toString))
+  def list(all: Boolean = false): Future[Seq[ContainerStatus]] = {
+    sendGetRequest(Path / "containers" / "json", Query("all" -> all.toString)).flatMap { response =>
+      response.status match {
+        case StatusCodes.OK =>
+          val unmarshaller = implicitly[FromResponseUnmarshaller[Seq[ContainerStatus]]]
+          unmarshaller(response)
+        case StatusCodes.BadRequest =>
+          Future.failed(BadRequestException("")) // TODO: Use entity as message
+        case StatusCodes.InternalServerError =>
+          Future.failed(ServerErrorException(response.status, "")) // TODO: Use entity as message
+        case status =>
+          Future.failed(UnknownResponseException(status))
+      }
+    }
+  }
 
-  def get(id: ContainerId) = getRequest[ContainerInfo](Path / "containers" / id.hash / "json")
+  def get(id: ContainerId): Future[ContainerInfo] = {
+    sendGetRequest(Path / "containers" / id.hash / "json").flatMap { response =>
+      response.status match {
+        case StatusCodes.OK =>
+          val unmarshaller = implicitly[FromResponseUnmarshaller[ContainerInfo]]
+          unmarshaller(response)
+        case StatusCodes.NotFound =>
+          Future.failed(ContainerNotFoundException(id))
+        case StatusCodes.InternalServerError =>
+          Future.failed(ServerErrorException(response.status, "")) // TODO: Use entity as message
+        case status =>
+          Future.failed(UnknownResponseException(status))
+      }
+    }
+  }
 
   def create(config: ContainerConfig): Future[CreateContainerResponse] = {
     sendPostRequest(Path / "containers" / "create", content = config).flatMap { response =>
@@ -150,9 +201,9 @@ trait ContainerCommands extends DockerCommands {
           val unmarshaller = implicitly[FromResponseUnmarshaller[CreateContainerResponse]]
           unmarshaller(response)
         case StatusCodes.NotFound =>
-          Future.failed(new ImageNotFoundException(config.image.toString))
+          Future.failed(ImageNotFoundException(config.image.toString))
         case status =>
-          Future.failed(new UnknownResponseException(status))
+          Future.failed(UnknownResponseException(status))
       }
     }
   }

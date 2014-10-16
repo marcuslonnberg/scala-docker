@@ -24,14 +24,12 @@ trait DockerPipeline extends JsonSupport {
     baseUri.withPath(baseUri.path ++ path).withQuery(query)
   }
 
-  private[api] def getRequest[T](path: Uri.Path, query: Uri.Query = Uri.Query.Empty)
-                                (implicit system: ActorSystem,
-                                 executionContext: ExecutionContext,
-                                 manifest: Manifest[T],
-                                 unmarshaller: FromResponseUnmarshaller[T],
-                                 materializer: FlowMaterializer) = {
+  private[api] def sendGetRequest(path: Uri.Path, query: Uri.Query = Uri.Query.Empty)
+                                 (implicit system: ActorSystem,
+                                  executionContext: ExecutionContext,
+                                  materializer: FlowMaterializer): Future[HttpResponse] = {
     val uri = createUri(path, query)
-    sendAndUnmarhall(HttpRequest(HttpMethods.GET, uri))
+    sendRequest(HttpRequest(HttpMethods.GET, uri))
   }
 
   private[api] def sendPostRequest[F, T](path: Uri.Path,

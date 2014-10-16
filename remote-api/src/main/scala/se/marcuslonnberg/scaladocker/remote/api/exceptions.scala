@@ -5,10 +5,14 @@ import se.marcuslonnberg.scaladocker.remote.models.{ImageName, ContainerId}
 
 abstract class DockerApiException(message: String) extends RuntimeException(message)
 
-class ContainerNotFoundException(id: ContainerId) extends DockerApiException(s"Container $id was not found")
+case class ContainerNotFoundException(id: ContainerId) extends DockerApiException(s"Container $id was not found")
 
-class ImageNotFoundException(imageName: String) extends DockerApiException(s"Image $imageName was not found")
+case class ImageNotFoundException(imageName: String) extends DockerApiException(s"Image $imageName was not found")
 
-class UnknownResponseException(statusCode: StatusCode) extends DockerApiException(statusCode.value)
+case class UnknownResponseException(statusCode: StatusCode) extends DockerApiException(statusCode.value)
 
-class CreateImageException(image: ImageName) extends DockerApiException(s"An error occurred while creating image: $image")
+case class ServerErrorException(statusCode: StatusCode, detailMessage: String) extends DockerApiException(s"Server error ($statusCode}): $detailMessage")
+
+case class BadRequestException(detailMessage: String) extends DockerApiException(detailMessage)
+
+case class CreateImageException(image: ImageName) extends DockerApiException(s"An error occurred while creating image: $image")
