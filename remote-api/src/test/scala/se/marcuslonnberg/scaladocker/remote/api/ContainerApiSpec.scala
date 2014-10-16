@@ -37,4 +37,10 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with FlatSp
 
     container.config.image shouldEqual busybox
   }
+
+  it should "fail when creating a container with an image that does not exist" in {
+    val eventualResponse = client.containers.create(ContainerConfig(ImageName("undefined-image")))
+
+    eventualResponse.failed.futureValue shouldBe an[ImageNotFoundException]
+  }
 }

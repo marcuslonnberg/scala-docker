@@ -14,8 +14,8 @@ import akka.stream.scaladsl2._
 import akka.util.Timeout
 import org.reactivestreams.Publisher
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 trait DockerPipeline extends JsonSupport {
   private[api] def baseUri: Uri
@@ -26,6 +26,7 @@ trait DockerPipeline extends JsonSupport {
 
   private[api] def getRequest[T](path: Uri.Path, query: Uri.Query = Uri.Query.Empty)
                                 (implicit system: ActorSystem,
+                                 executionContext: ExecutionContext,
                                  manifest: Manifest[T],
                                  unmarshaller: FromResponseUnmarshaller[T],
                                  materializer: FlowMaterializer) = {
@@ -33,33 +34,37 @@ trait DockerPipeline extends JsonSupport {
     sendAndUnmarhall(HttpRequest(HttpMethods.GET, uri))
   }
 
-  private[api] def postRequest[F, T](path: Uri.Path,
-                                     query: Uri.Query = Uri.Query.Empty,
-                                     content: F)
-                                    (implicit system: ActorSystem,
-                                     manifestTo: Manifest[T],
-                                     unmarshaller: FromResponseUnmarshaller[T],
-                                     marshaller: Marshaller[F, RequestEntity],
-                                     materializer: FlowMaterializer): Future[T] = {
+  private[api] def sendPostRequest[F, T](path: Uri.Path,
+                                         query: Uri.Query = Uri.Query.Empty,
+                                         content: F)
+                                        (implicit system: ActorSystem,
+                                         marshaller: Marshaller[F, RequestEntity],
+                                         materializer: FlowMaterializer): Future[HttpResponse] = {
     import system.dispatcher
     val uri = createUri(path, query)
-    val eventualEntity = marshaller(content).map {
+    val eventualEntity = createEntity(content)
+    eventualEntity.flatMap { entity =>
+      val httpRequest = HttpRequest(HttpMethods.POST, uri, entity = entity)
+      sendRequest(httpRequest)
+    }
+  }
+
+  def createEntity[T, F](content: F)(implicit executionContext: ExecutionContext,
+                                     marshaller: Marshaller[F, RequestEntity]): Future[RequestEntity] = {
+    marshaller(content).map {
       case marshalling: WithFixedCharset[RequestEntity] =>
         marshalling.marshal()
       case marshalling =>
         sys.error(s"Unsupported marshalling: $marshalling")
     }
-    eventualEntity.flatMap { entity =>
-      sendAndUnmarhall(HttpRequest(HttpMethods.POST, uri, entity = entity))
-    }
   }
 
   private[api] def sendAndUnmarhall[T](httpRequest: HttpRequest)
                                       (implicit system: ActorSystem,
+                                       executionContext: ExecutionContext,
                                        manifest: Manifest[T],
                                        unmarshaller: FromResponseUnmarshaller[T],
                                        materializer: FlowMaterializer): Future[T] = {
-    import system.dispatcher
     sendRequest(httpRequest).flatMap { response =>
       unmarshaller(response)
     }

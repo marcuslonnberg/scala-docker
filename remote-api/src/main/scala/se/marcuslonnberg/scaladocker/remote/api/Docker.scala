@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.model.HttpMethods._
 import akka.http.model.Uri._
 import akka.http.model._
+import akka.http.unmarshalling.FromResponseUnmarshaller
 import akka.stream.scaladsl2._
 import org.json4s.JObject
 import org.json4s.native.Serialization._
@@ -11,7 +12,7 @@ import org.reactivestreams.Publisher
 import se.marcuslonnberg.scaladocker.remote.models._
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContextExecutor, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 object DockerClient {
   def apply()(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient = {
@@ -46,7 +47,7 @@ case class DockerClient(baseUri: Uri)(implicit system: ActorSystem, materializer
 
   def run(containerConfig: ContainerConfig, hostConfig: HostConfig)(implicit materializer: FlowMaterializer): Future[ContainerId] = {
     runLocal(containerConfig, hostConfig).recoverWith {
-      case _: UnknownResponseException =>
+      case _: ImageNotFoundException =>
         val create = images.create(containerConfig.image)
 
         val eventualErrorSink = FutureSink[Error]
@@ -142,8 +143,18 @@ trait ContainerCommands extends DockerCommands {
 
   def get(id: ContainerId) = getRequest[ContainerInfo](Path / "containers" / id.hash / "json")
 
-  def create(config: ContainerConfig) = {
-    postRequest[ContainerConfig, CreateContainerResponse](Path / "containers" / "create", content = config)
+  def create(config: ContainerConfig): Future[CreateContainerResponse] = {
+    sendPostRequest(Path / "containers" / "create", content = config).flatMap { response =>
+      response.status match {
+        case StatusCodes.Created =>
+          val unmarshaller = implicitly[FromResponseUnmarshaller[CreateContainerResponse]]
+          unmarshaller(response)
+        case StatusCodes.NotFound =>
+          Future.failed(new ImageNotFoundException(config.image.toString))
+        case status =>
+          Future.failed(new UnknownResponseException(status))
+      }
+    }
   }
 
   def start(id: ContainerId, config: HostConfig) = {

@@ -7,6 +7,8 @@ abstract class DockerApiException(message: String) extends RuntimeException(mess
 
 class ContainerNotFoundException(id: ContainerId) extends DockerApiException(s"Container $id was not found")
 
+class ImageNotFoundException(imageName: String) extends DockerApiException(s"Image $imageName was not found")
+
 class UnknownResponseException(statusCode: StatusCode) extends DockerApiException(statusCode.value)
 
 class CreateImageException(image: ImageName) extends DockerApiException(s"An error occurred while creating image: $image")

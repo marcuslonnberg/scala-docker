@@ -28,7 +28,7 @@ trait JsonSupport {
     Unmarshaller[HttpEntity, T]({
       case x: HttpEntity =>
         import actorRefFactory.dispatcher
-        val timeout = 1.second
+        val timeout = 5.second
         implicit val temp = akka.stream.FlowMaterializer(materializer.settings)
         x.toStrict(timeout).map { ent =>
           val value =
