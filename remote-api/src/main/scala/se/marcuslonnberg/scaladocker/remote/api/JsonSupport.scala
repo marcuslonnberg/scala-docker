@@ -4,7 +4,7 @@ import java.lang.reflect.InvocationTargetException
 
 import akka.actor.ActorRefFactory
 import akka.http.marshalling.Marshaller
-import akka.http.model.{HttpCharsets, HttpEntity, HttpResponse, MediaTypes}
+import akka.http.model._
 import akka.http.unmarshalling.Unmarshaller
 import akka.stream.scaladsl2.FlowMaterializer
 import org.json4s.native.Serialization
@@ -43,6 +43,6 @@ trait JsonSupport {
   implicit def json4sMarshallerString[T <: AnyRef]: Marshaller[T, String] =
     Marshaller.withFixedCharset[T, String](MediaTypes.`application/json`, HttpCharsets.`UTF-8`)(serialization.write(_))
 
-  implicit def json4sMarshallerEntity[T <: AnyRef]: Marshaller[T, HttpEntity.Regular] =
-    Marshaller.withFixedCharset[T, HttpEntity.Regular](MediaTypes.`application/json`, HttpCharsets.`UTF-8`)(c => HttpEntity(serialization.write(c)))
+  implicit def json4sMarshallerEntity[T <: AnyRef]: Marshaller[T, RequestEntity] =
+    Marshaller.withFixedCharset[T, RequestEntity](MediaTypes.`application/json`, HttpCharsets.`UTF-8`)(c => HttpEntity(serialization.write(c)))
 }

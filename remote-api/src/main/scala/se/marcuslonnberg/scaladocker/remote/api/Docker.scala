@@ -11,7 +11,7 @@ import org.reactivestreams.Publisher
 import se.marcuslonnberg.scaladocker.remote.models._
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContextExecutor, ExecutionContext, Future}
 
 object DockerClient {
   def apply()(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient = {
@@ -35,11 +35,11 @@ case class DockerClient(baseUri: Uri)(implicit system: ActorSystem, materializer
     this: DockerCommands =>
     override def baseUri = DockerClient.this.baseUri
 
-    implicit def system = DockerClient.this.system
+    implicit def system: ActorSystem = DockerClient.this.system
 
-    implicit def materializer = DockerClient.this.materializer
+    implicit def materializer: FlowMaterializer = DockerClient.this.materializer
 
-    implicit def dispatcher = system.dispatcher
+    implicit def dispatcher: ExecutionContextExecutor = system.dispatcher
   }
 
   import system.dispatcher

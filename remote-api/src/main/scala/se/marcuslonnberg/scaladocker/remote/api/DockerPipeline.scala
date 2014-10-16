@@ -39,17 +39,17 @@ trait DockerPipeline extends JsonSupport {
                                     (implicit system: ActorSystem,
                                      manifestTo: Manifest[T],
                                      unmarshaller: FromResponseUnmarshaller[T],
-                                     marshaller: Marshaller[F, HttpEntity.Regular],
+                                     marshaller: Marshaller[F, RequestEntity],
                                      materializer: FlowMaterializer): Future[T] = {
     import system.dispatcher
     val uri = createUri(path, query)
     val eventualEntity = marshaller(content).map {
-      case marshalling: WithFixedCharset[HttpEntity.Regular] =>
+      case marshalling: WithFixedCharset[RequestEntity] =>
         marshalling.marshal()
       case marshalling =>
         sys.error(s"Unsupported marshalling: $marshalling")
     }
-    eventualEntity.toFuture.flatMap { entity =>
+    eventualEntity.flatMap { entity =>
       sendAndUnmarhall(HttpRequest(HttpMethods.POST, uri, entity = entity))
     }
   }
@@ -61,7 +61,7 @@ trait DockerPipeline extends JsonSupport {
                                        materializer: FlowMaterializer): Future[T] = {
     import system.dispatcher
     sendRequest(httpRequest).flatMap { response =>
-      unmarshaller(response).toFuture
+      unmarshaller(response)
     }
   }
 
