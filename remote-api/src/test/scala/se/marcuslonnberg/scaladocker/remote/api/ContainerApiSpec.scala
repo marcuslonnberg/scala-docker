@@ -43,4 +43,18 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with FlatSp
 
     eventualResponse.failed.futureValue shouldBe an[ImageNotFoundException]
   }
+
+  it should "start a container" in {
+    val createId = client.containers.create(ContainerConfig(busybox)).futureValue.id
+
+    val hostConfig = HostConfig(publishAllPorts = true)
+    val startId = client.containers.start(createId, hostConfig).futureValue
+
+    startId shouldEqual createId
+
+    val info = client.containers.get(createId).futureValue
+
+    info.hostConfig.publishAllPorts shouldEqual true
+    info.hostConfig shouldEqual hostConfig
+  }
 }

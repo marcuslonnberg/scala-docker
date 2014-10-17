@@ -47,11 +47,11 @@ trait DockerPipeline extends JsonSupport {
     }
   }
 
-  def createEntity[T, F](content: F)(implicit executionContext: ExecutionContext,
+  private[api] def createEntity[T, F](content: F)(implicit executionContext: ExecutionContext,
                                      marshaller: Marshaller[F, RequestEntity]): Future[RequestEntity] = {
     marshaller(content).map {
       case marshalling: WithFixedCharset[RequestEntity] =>
-        marshalling.marshal()
+        marshalling.marshal().withContentType(MediaTypes.`application/json`)
       case marshalling =>
         sys.error(s"Unsupported marshalling: $marshalling")
     }

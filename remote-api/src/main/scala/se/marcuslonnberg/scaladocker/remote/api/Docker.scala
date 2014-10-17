@@ -209,8 +209,7 @@ trait ContainerCommands extends DockerCommands {
   }
 
   def start(id: ContainerId, config: HostConfig) = {
-    val uri = baseUri.withPath(Path / "containers" / id.hash / "start")
-    sendRequest(HttpRequest(POST, uri)) map containerResponse(id)
+    sendPostRequest(Path / "containers" / id.hash / "start", content = config).map(containerResponse(id))
   }
 
   def stop(id: ContainerId, maxWaitTime: Option[Duration] = None) = {
