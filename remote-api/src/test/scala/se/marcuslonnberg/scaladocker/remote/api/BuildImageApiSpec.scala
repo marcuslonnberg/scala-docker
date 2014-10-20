@@ -15,7 +15,7 @@ class BuildImageApiSpec extends TestKit(ActorSystem("image-api")) with FlatSpecL
 
   val client = DockerClient()
 
-  val imageName = ImageName("scala-docker/image-build")
+  val imageName = ImageName("scaladocker/image-build")
 
   "Build image API" should "run commands from the Dockerfile in the root of the tar archive" in {
     val tarArchive = TarArchive(

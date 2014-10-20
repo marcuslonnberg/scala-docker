@@ -13,9 +13,9 @@ class ImageApiSpec extends TestKit(ActorSystem("image-api")) with FlatSpecLike w
 
   val client = DockerClient()
 
-  val imageName = ImageName("scala-docker/image:start")
-  val imageNameNewTag = ImageName("scala-docker/image:new-tag")
-  val imageNameDelete = ImageName("scala-docker/image:delete")
+  val imageName = ImageName("scaladocker/image:start")
+  val imageNameNewTag = ImageName("scaladocker/image:new-tag")
+  val imageNameDelete = ImageName("scaladocker/image:delete")
 
   override def beforeAll() = {
     val busybox = ImageName("busybox")
@@ -57,7 +57,7 @@ class ImageApiSpec extends TestKit(ActorSystem("image-api")) with FlatSpecLike w
   }
 
   def currentImageNames(): Seq[ImageName] = {
-    val images = client.images.list.futureValue
+    val images = client.images.list().futureValue
     val names = images.flatMap(_.repoTags)
     names
   }
