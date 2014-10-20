@@ -18,7 +18,7 @@ object DockerClient {
   def apply()(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient = {
     val key = "DOCKER_HOST"
     val value = sys.env.get(key).filter(_.nonEmpty).getOrElse {
-      sys.error(s"Environment variable $key was not set")
+      sys.error(s"Environment variable $key is not set")
     }
     apply(Uri(value))
   }
