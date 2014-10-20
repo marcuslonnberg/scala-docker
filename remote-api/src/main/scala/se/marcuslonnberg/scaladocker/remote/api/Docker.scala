@@ -109,15 +109,11 @@ trait ImageCommands extends DockerCommands {
   }
 
   def create(imageName: ImageName): Publisher[CreateMessage] = {
-    val parameters = Map(
-      "fromImage" -> Option(imageName.repository),
-      "tag" -> Option(imageName.tag),
-      "registry" -> imageName.registry,
-      "repo" -> imageName.namespace)
+    val parameters = Map("fromImage" -> imageName.toString)
 
     val uri = baseUri
       .withPath(Path / "images" / "create")
-      .withQuery(parameters.mapValues(_.getOrElse("")))
+      .withQuery(parameters)
 
     FlowFrom(requestChunkedLines(HttpRequest(POST, uri)))
       .filter(_.nonEmpty)
