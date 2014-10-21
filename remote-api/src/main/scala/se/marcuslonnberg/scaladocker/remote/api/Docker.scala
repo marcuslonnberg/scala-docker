@@ -1,9 +1,12 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
+import java.util.Base64
+
 import akka.actor.ActorSystem
 import akka.http.model.HttpMethods._
 import akka.http.model.Uri._
 import akka.http.model._
+import akka.http.model.headers.RawHeader
 import akka.http.unmarshalling.FromResponseUnmarshaller
 import akka.stream.scaladsl2._
 import org.json4s.JObject
@@ -20,17 +23,19 @@ object DockerClient {
     val value = sys.env.get(key).filter(_.nonEmpty).getOrElse {
       sys.error(s"Environment variable $key is not set")
     }
-    apply(Uri(value))
+    apply(Uri(value), Seq.empty)
   }
 
   def apply(host: String, port: Int = 2375)(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient =
-    apply(Uri(s"http://$host:$port"))
+    apply(Uri(s"http://$host:$port"), Seq.empty)
 }
 
-case class DockerClient(baseUri: Uri)(implicit system: ActorSystem, materializer: FlowMaterializer) {
+case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system: ActorSystem, materializer: FlowMaterializer) {
   val containers = new ContainerCommands with Context
   val host = new HostCommands with Context
-  val images = new ImageCommands with BuildCommand with Context
+  val images = new ImageCommands with BuildCommand with Context {
+    override private[api] def auths = DockerClient.this.auths
+  }
 
   trait Context {
     this: DockerCommands =>
@@ -68,6 +73,8 @@ case class DockerClient(baseUri: Uri)(implicit system: ActorSystem, materializer
       containers.start(response.id, hostConfig)
     }
   }
+
+  def withAuths(auths: Seq[RegistryAuth]) = copy(auths = auths)
 }
 
 trait DockerCommands extends DockerPipeline {
@@ -93,7 +100,34 @@ trait HostCommands extends DockerCommands {
   }
 }
 
-trait ImageCommands extends DockerCommands {
+trait AuthUtils {
+  this: JsonSupport =>
+
+  private[api] def auths: Seq[RegistryAuth]
+
+  private[api] val DockerHubUrl = "https://index.docker.io/v1/"
+
+  private[api] def getAuth(registry: Option[String]): Option[RegistryAuth] = {
+    val url = registry.getOrElse(DockerHubUrl)
+
+    def hostname(url: String) = Uri(url).authority.host.address()
+
+    auths.find(auth => auth.url == url)
+      .orElse(auths.find(auth => hostname(auth.url) == hostname(url)))
+  }
+
+  private[api] def getAuthHeader(registry: Option[String]): Option[HttpHeader] = {
+    getAuth(registry).map { auth =>
+      val value = {
+        val json = write(auth.toConfig)
+        Base64.getEncoder.encodeToString(json.getBytes("UTF-8"))
+      }
+      RawHeader("X-Registry-Auth", value)
+    }
+  }
+}
+
+trait ImageCommands extends DockerCommands with AuthUtils {
   def list(): Future[Seq[Image]] = {
     sendGetRequest(Path / "images" / "json").flatMap { response =>
       response.status match {
@@ -115,7 +149,9 @@ trait ImageCommands extends DockerCommands {
       .withPath(Path / "images" / "create")
       .withQuery(parameters)
 
-    FlowFrom(requestChunkedLines(HttpRequest(POST, uri)))
+    val headers = getAuthHeader(imageName.registry).toList
+
+    FlowFrom(requestChunkedLines(HttpRequest(POST, uri, headers)))
       .filter(_.nonEmpty)
       .map { line =>
       val obj = read[JObject](line)

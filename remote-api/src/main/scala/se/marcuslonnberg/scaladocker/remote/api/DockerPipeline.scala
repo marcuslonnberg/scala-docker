@@ -69,8 +69,8 @@ trait DockerPipeline extends JsonSupport {
   }
 
   private[api] def sendRequest(request: HttpRequest)
-                              (implicit system: ActorSystem, materializer: FlowMaterializer): Future[HttpResponse] = {
-    implicit val timeout = Timeout(30.seconds)
+                              (implicit system: ActorSystem, materializer: FlowMaterializer,
+                               timeout: Timeout = Timeout(30.seconds)): Future[HttpResponse] = {
     import system.dispatcher
 
     (IO(Http) ? Connect(request.uri.authority.host.address(), request.uri.effectivePort)).mapTo[OutgoingConnection]
