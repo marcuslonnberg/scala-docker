@@ -70,4 +70,26 @@ class ImageNameSpec extends FlatSpec with Matchers {
       ImageName("registry/namespace/repository")
     }
   }
+
+  it should "not parse invalid namespace names" in {
+    a[IllegalArgumentException] should be thrownBy ImageName("n/image")
+    a[IllegalArgumentException] should be thrownBy ImageName("NAMESPACE/image")
+    a[IllegalArgumentException] should be thrownBy ImageName("nAmeSpace/image")
+    a[IllegalArgumentException] should be thrownBy ImageName("name-space/image")
+    a[IllegalArgumentException] should be thrownBy ImageName("verylooooooooooooooooooooooooooooooooong/image")
+    a[IllegalArgumentException] should be thrownBy ImageName("!@#$/image")
+  }
+
+  it should "not parse invalid repository names" in {
+    a[IllegalArgumentException] should be thrownBy ImageName("")
+    a[IllegalArgumentException] should be thrownBy ImageName("IMAGE")
+    a[IllegalArgumentException] should be thrownBy ImageName("iMagE")
+    a[IllegalArgumentException] should be thrownBy ImageName("!@#$")
+  }
+
+  it should "not parse invalid tag names" in {
+    a[IllegalArgumentException] should be thrownBy ImageName("image:s")
+    a[IllegalArgumentException] should be thrownBy ImageName("image:verylooooooooooooooooooooooooooooooooong")
+    a[IllegalArgumentException] should be thrownBy ImageName("image:!@#$")
+  }
 }
