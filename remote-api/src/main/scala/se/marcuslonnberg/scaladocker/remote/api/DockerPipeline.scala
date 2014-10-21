@@ -16,6 +16,7 @@ import org.reactivestreams.Publisher
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 trait DockerPipeline extends JsonSupport {
   private[api] def baseUri: Uri
@@ -48,7 +49,7 @@ trait DockerPipeline extends JsonSupport {
   }
 
   private[api] def createEntity[T, F](content: F)(implicit executionContext: ExecutionContext,
-                                     marshaller: Marshaller[F, RequestEntity]): Future[RequestEntity] = {
+                                                  marshaller: Marshaller[F, RequestEntity]): Future[RequestEntity] = {
     marshaller(content).map {
       case marshalling: WithFixedCharset[RequestEntity] =>
         marshalling.marshal().withContentType(MediaTypes.`application/json`)
@@ -97,15 +98,18 @@ trait DockerPipeline extends JsonSupport {
 
     val subscriber = sub.subscriber(flow)
 
-    sendRequest(httpRequest).map { response =>
-      response.entity match {
-        case HttpEntity.Chunked(contentType, chunks) =>
-          chunks.subscribe(subscriber)
-        case entity =>
-          subscriber.onError {
-            sys.error(s"Unsupported entity: $entity")
-          }
-      }
+    sendRequest(httpRequest).onComplete {
+      case Success(response) =>
+        response.entity match {
+          case HttpEntity.Chunked(contentType, chunks) =>
+            chunks.subscribe(subscriber)
+          case entity =>
+            subscriber.onError {
+              sys.error(s"Unsupported entity: $entity")
+            }
+        }
+      case Failure(ex) =>
+        subscriber.onError(ex)
     }
 
     out.publisher(flow)
