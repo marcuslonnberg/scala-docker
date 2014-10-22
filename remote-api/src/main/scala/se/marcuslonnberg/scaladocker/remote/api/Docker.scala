@@ -1,7 +1,5 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
-import java.util.Base64
-
 import akka.actor.ActorSystem
 import akka.http.model.HttpMethods._
 import akka.http.model.Uri._
@@ -9,6 +7,7 @@ import akka.http.model._
 import akka.http.model.headers.RawHeader
 import akka.http.unmarshalling.FromResponseUnmarshaller
 import akka.stream.scaladsl2._
+import org.apache.commons.codec.binary.Base64
 import org.json4s.JObject
 import org.json4s.native.Serialization._
 import org.reactivestreams.Publisher
@@ -120,7 +119,7 @@ trait AuthUtils {
     getAuth(registry).map { auth =>
       val value = {
         val json = write(auth.toConfig)
-        Base64.getEncoder.encodeToString(json.getBytes("UTF-8"))
+        Base64.encodeBase64String(json.getBytes("UTF-8"))
       }
       RawHeader("X-Registry-Auth", value)
     }

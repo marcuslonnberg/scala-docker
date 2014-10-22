@@ -17,10 +17,12 @@ object Dependencies {
 
   val jtar = "org.kamranzafar" % "jtar" % "2.2"
 
+  val commonsCodec = "commons-codec" % "commons-codec" % "1.9"
+
   val scalaTest = "org.scalatest" %% "scalatest" % "2.2.2" % "test"
 
   object Projects {
-    val remoteApi = Seq(akkaActor, akkaStream, akkaHttp, jtar, scalaTest, akkaTestkit)
+    val remoteApi = Seq(akkaActor, akkaStream, akkaHttp, jtar, commonsCodec, scalaTest, akkaTestkit)
     val remoteModels = Seq(json4sNative, json4sExt, nscalaTime, scalaTest)
   }
 
