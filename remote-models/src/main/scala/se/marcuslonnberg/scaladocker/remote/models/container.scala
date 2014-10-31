@@ -90,7 +90,7 @@ case class ContainerLink(containerName: String, aliasName: Option[String] = None
   def mkString = containerName + aliasName.fold("")(":" + _)
 }
 
-case class HostConfig(binds: List[String] = List.empty,
+case class HostConfig(binds: List[Volume] = List.empty,
                       lxcConf: List[String] = List.empty,
                       privileged: Boolean = false,
                       portBindings: Map[Port, Seq[PortBinding]] = Map.empty,
@@ -144,7 +144,7 @@ case class ContainerInfo(id: ContainerId,
                          volumes: List[Volume] = List.empty,
                          hostConfig: HostConfig)
 
-case class Volume(hostPath: String, containerPath: String, rw: Boolean)
+case class Volume(hostPath: String, containerPath: String, rw: Boolean = true)
 
 case class ContainerStatus(command: String,
                            created: DateTime,

@@ -25,6 +25,17 @@ class JsonSpec extends FlatSpec with Matchers {
     compare(state)
   }
 
+  "Volume bindings" should "be serializable and deserializable" in {
+    def test(volume: Volume, string: String) = {
+      JsonFormats.serializeBinding(volume) shouldEqual string
+      JsonFormats.deserializeBinding(string) shouldEqual volume
+    }
+
+    test(Volume(hostPath = "/a", containerPath = "/b", rw = true), "/a:/b")
+    test(Volume(hostPath = "/a", containerPath = "/b", rw = false), "/a:/b:ro")
+    test(Volume(hostPath = "/a/b/c/d/", containerPath = "/e/f/g/h/", rw = true), "/a/b/c/d/:/e/f/g/h/")
+  }
+
   def readResource[T: Manifest](path: String): T = {
     val rawString = Source.fromURL(getClass.getResource(path))
     read[T](rawString.mkString)

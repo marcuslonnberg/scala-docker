@@ -114,6 +114,23 @@ object JsonFormats {
     (vol.toMap, volRw.toMap)
   }
 
+  def deserializeBinding(binding: String): Volume = {
+    binding.split(":") match {
+      case Array(host, container) =>
+        Volume(host, container, rw = true)
+      case Array(host, container, readOnly) =>
+        Volume(host, container, readOnly != "ro")
+      case _ =>
+        sys.error(s"Could not parse binding: $binding")
+    }
+  }
+
+  def serializeBinding(binding: Volume): String = {
+    val paths = binding.hostPath + ":" + binding.containerPath
+    if (binding.rw) paths
+    else paths + ":ro"
+  }
+
   def apply(): Formats = DefaultFormats.lossless ++
     org.json4s.ext.JodaTimeSerializers.all +
     camelCaseFieldSerializer[CreateContainerResponse]() +

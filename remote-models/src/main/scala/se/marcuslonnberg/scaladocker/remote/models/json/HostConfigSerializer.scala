@@ -1,16 +1,16 @@
 package se.marcuslonnberg.scaladocker.remote.models.json
 
-import org.json4s.{Extraction, CustomSerializer}
-import org.json4s.JsonDSL._
 import org.json4s.JsonAST._
-import se.marcuslonnberg.scaladocker.remote.models._
+import org.json4s.JsonDSL._
+import org.json4s.{CustomSerializer, Extraction}
 import se.marcuslonnberg.scaladocker.remote.models.JsonFormatHelpers._
+import se.marcuslonnberg.scaladocker.remote.models._
 
 object HostConfigSerializer extends CustomSerializer[HostConfig](implicit formats => ( {
   case obj: JObject =>
     implicit val o = obj
 
-    val binds = extractField[List[String]]("Binds")
+    val binds = extractField[List[String]]("Binds").map(JsonFormats.deserializeBinding)
     val lxcConf = extractField[List[String]]("LxcConf")
     val privileged = extractField[Boolean]("Privileged")
     val portBindings = JsonFormats.deserializePortBindings(extractField[JValue]("PortBindings"))
@@ -42,7 +42,7 @@ object HostConfigSerializer extends CustomSerializer[HostConfig](implicit format
       restartPolicy = restartPolicy)
 }, {
   case hc: HostConfig =>
-    ("Binds" -> hc.binds) ~
+    ("Binds" -> hc.binds.map(JsonFormats.serializeBinding)) ~
       ("LxcConf" -> hc.lxcConf) ~
       ("Privileged" -> hc.privileged) ~
       ("PortBindings" -> JsonFormats.serializePortBindings(hc.portBindings)) ~
