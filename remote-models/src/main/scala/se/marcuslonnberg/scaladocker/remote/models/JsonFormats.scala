@@ -5,13 +5,15 @@ import org.json4s.JsonDSL._
 import org.json4s._
 import se.marcuslonnberg.scaladocker.remote.models.json._
 
+import scala.util.control.NonFatal
+
 object JsonFormatHelpers {
   def extractField[T](fieldName: String)(implicit obj: JObject, manifest: Manifest[T], formats: Formats): T = {
     try {
       (obj \ fieldName).extract[T]
     } catch {
-      case e: RuntimeException =>
-        throw new MappingException(s"Could not find field '$fieldName' or extract a value of type: $manifest", e)
+      case NonFatal(e: Exception) =>
+        throw MappingException(s"Could not find field '$fieldName' or extract a value of type: $manifest", e)
     }
   }
 
@@ -52,10 +54,10 @@ object JsonFormats {
     case ImageId(id) => JString(id)
   }))
 
-  val ContainerIdFormat = new CustomSerializer[ContainerId](formats => ( {
-    case JString(id) => ContainerId(id)
+  val ContainerIdFormat = new CustomSerializer[ContainerHashId](formats => ( {
+    case JString(id) => ContainerHashId(id)
   }, {
-    case ContainerId(id) => JString(id)
+    case ContainerHashId(id) => JString(id)
   }))
 
   val ContainerLinkFormat = new CustomSerializer[ContainerLink](formats => ( {
@@ -94,14 +96,17 @@ object JsonFormats {
   }
 
   def deserializeVolumes(volumesRaw: JObject, volumesRW: JObject): List[Volume] = {
-    volumesRaw.obj.map {
-      case (hostPath, JString(containerPath)) =>
-        val rw = volumesRW.values.get(containerPath).exists {
-          case value: Boolean => value
-          case _ => false
-        }
-        Volume(containerPath, hostPath, rw)
-      case _ => sys.error("Could not parse volumes")
+    if (volumesRaw == null || volumesRW == null) List.empty
+    else {
+      volumesRaw.obj.map {
+        case (hostPath, JString(containerPath)) =>
+          val rw = volumesRW.values.get(containerPath).exists {
+            case value: Boolean => value
+            case _ => false
+          }
+          Volume(containerPath, hostPath, rw)
+        case _ => sys.error("Could not parse volumes")
+      }
     }
   }
 

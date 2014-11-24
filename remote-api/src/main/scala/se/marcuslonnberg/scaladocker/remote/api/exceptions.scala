@@ -1,7 +1,7 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.http.model.StatusCode
-import se.marcuslonnberg.scaladocker.remote.models.{ImageName, ContainerId}
+import se.marcuslonnberg.scaladocker.remote.models.{ContainerId, ImageName}
 
 abstract class DockerApiException(message: String) extends RuntimeException(message)
 

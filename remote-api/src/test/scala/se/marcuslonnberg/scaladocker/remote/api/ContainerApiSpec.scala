@@ -6,7 +6,7 @@ import akka.stream.scaladsl2.FlowMaterializer
 import akka.testkit.TestKit
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FlatSpecLike, Inspectors, Matchers}
-import se.marcuslonnberg.scaladocker.remote.models.{ContainerConfig, HostConfig, ImageName}
+import se.marcuslonnberg.scaladocker.remote.models._
 
 class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with FlatSpecLike with Matchers with ScalaFutures with IntegrationPatience with Inspectors {
   implicit val mat = FlowMaterializer(MaterializerSettings(system))
@@ -56,5 +56,17 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with FlatSp
 
     info.hostConfig.publishAllPorts shouldEqual true
     info.hostConfig shouldEqual hostConfig
+  }
+
+  it should "create, get and delete a container by name" in {
+    val name = ContainerName("scala-container-name")
+
+    val createId = client.containers.create(ContainerConfig(busybox), Some(name)).futureValue.id
+
+    val info = client.containers.get(name).futureValue
+    info.id shouldEqual createId
+    info.name shouldEqual "/scala-container-name"
+
+    client.containers.delete(name).futureValue shouldEqual name
   }
 }

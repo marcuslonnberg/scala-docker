@@ -2,10 +2,22 @@ package se.marcuslonnberg.scaladocker.remote.models
 
 import org.joda.time.DateTime
 
-case class ContainerId(hash: String) {
+sealed trait ContainerId {
+  def value: String
+}
+
+case class ContainerHashId(hash: String) extends ContainerId {
+  override def value = hash
+
   def shortHash = hash.take(12)
 
   override def toString = hash
+}
+
+case class ContainerName(name: String) extends ContainerId {
+  override def value = name
+
+  override def toString = name
 }
 
 sealed trait Port {
@@ -109,7 +121,7 @@ case class RestartPolicy(name: String = "", maximumRetryCount: Int = 0)
 
 case class DeviceMapping(pathOnHost: String, pathInContainer: String, cgroupPermissions: String)
 
-case class CreateContainerResponse(id: ContainerId, warnings: List[String])
+case class CreateContainerResponse(id: ContainerHashId, warnings: List[String])
 
 case class ContainerState(running: Boolean,
                           paused: Boolean,
@@ -125,7 +137,7 @@ case class NetworkSettings(ipAddress: String,
                            bridge: String,
                            ports: Map[Port, Seq[PortBinding]])
 
-case class ContainerInfo(id: ContainerId,
+case class ContainerInfo(id: ContainerHashId,
                          created: DateTime,
                          path: String,
                          args: List[String],
@@ -148,7 +160,7 @@ case class Volume(hostPath: String, containerPath: String, rw: Boolean = true)
 
 case class ContainerStatus(command: String,
                            created: DateTime,
-                           id: ContainerId,
+                           id: ContainerHashId,
                            image: ImageName,
                            names: List[String],
                            ports: Map[Port, Seq[PortBinding]] = Map.empty,

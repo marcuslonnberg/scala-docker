@@ -210,7 +210,7 @@ trait ContainerCommands extends DockerCommands {
   }
 
   def get(id: ContainerId): Future[ContainerInfo] = {
-    sendGetRequest(Path / "containers" / id.hash / "json").flatMap { response =>
+    sendGetRequest(Path / "containers" / id.value / "json").flatMap { response =>
       response.status match {
         case StatusCodes.OK =>
           val unmarshaller = implicitly[FromResponseUnmarshaller[ContainerInfo]]
@@ -225,8 +225,9 @@ trait ContainerCommands extends DockerCommands {
     }
   }
 
-  def create(config: ContainerConfig): Future[CreateContainerResponse] = {
-    sendPostRequest(Path / "containers" / "create", content = config).flatMap { response =>
+  def create(config: ContainerConfig, name: Option[ContainerName] = None): Future[CreateContainerResponse] = {
+    val query = name.map(n => Uri.Query("name" -> n.value)).getOrElse(Uri.Query.Empty)
+    sendPostRequest(Path / "containers" / "create", query, config).flatMap { response =>
       response.status match {
         case StatusCodes.Created =>
           val unmarshaller = implicitly[FromResponseUnmarshaller[CreateContainerResponse]]
@@ -240,26 +241,26 @@ trait ContainerCommands extends DockerCommands {
   }
 
   def start(id: ContainerId, config: HostConfig) = {
-    sendPostRequest(Path / "containers" / id.hash / "start", content = config).map(containerResponse(id))
+    sendPostRequest(Path / "containers" / id.value / "start", content = config).map(containerResponse(id))
   }
 
   def stop(id: ContainerId, maxWaitTime: Option[Duration] = None) = {
     val uri = baseUri
-      .withPath(Path / "containers" / id.hash / "stop")
+      .withPath(Path / "containers" / id.value / "stop")
       .withQuery("t" -> maxWaitTime.fold(Query.EmptyValue)(_.toSeconds.toString))
     sendRequest(HttpRequest(POST, uri)) map containerResponse(id)
   }
 
-  def delete(id: ContainerId, removeVolumes: Option[Boolean] = None, force: Option[Boolean] = None) = {
+  def delete(id: ContainerId, removeVolumes: Option[Boolean] = None, force: Option[Boolean] = None): Future[ContainerId] = {
     val uri = baseUri
-      .withPath(Path / "containers" / id.hash)
+      .withPath(Path / "containers" / id.value)
       .withQuery(
         "t" -> removeVolumes.fold(Query.EmptyValue)(_.toString),
         "force" -> force.fold(Query.EmptyValue)(_.toString))
     sendRequest(HttpRequest(DELETE, uri)) map containerResponse(id)
   }
 
-  def logs(id: ContainerId, follow: Boolean = false, stdout: Boolean = true, stderr: Boolean = false, timestamps: Boolean = false): Publisher[String] = {
+  def logs(id: ContainerHashId, follow: Boolean = false, stdout: Boolean = true, stderr: Boolean = false, timestamps: Boolean = false): Publisher[String] = {
     val uri = baseUri
       .withPath(Path / "containers" / id.hash / "logs")
       .withQuery(
@@ -270,7 +271,7 @@ trait ContainerCommands extends DockerCommands {
     requestChunkedLines(HttpRequest(GET, uri))
   }
 
-  private def containerResponse(id: ContainerId)(response: HttpResponse) = {
+  private def containerResponse(id: ContainerId)(response: HttpResponse): ContainerId = {
     response.status match {
       case StatusCodes.NoContent =>
         id

@@ -11,7 +11,7 @@ object ContainerInfoSerializer extends CustomSerializer[ContainerInfo](implicit 
   case obj: JObject =>
     implicit val o = obj
 
-    val id = extractField[ContainerId]("Id")
+    val id = extractField[ContainerHashId]("Id")
     val created = extractField[DateTime]("Created")
     val path = extractField[String]("Path")
     val args = extractField[List[String]]("Args")

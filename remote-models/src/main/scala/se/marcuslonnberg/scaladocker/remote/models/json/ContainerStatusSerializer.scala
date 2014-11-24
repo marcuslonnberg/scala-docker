@@ -13,7 +13,7 @@ object ContainerStatusSerializer extends CustomSerializer[ContainerStatus](impli
 
     val command = extractField[String]("Command")
     val created = new DateTime(extractField[Long]("Created") * 1000)
-    val id = extractField[ContainerId]("Id")
+    val id = extractField[ContainerHashId]("Id")
     val image = extractField[ImageName]("Image")
     val names = extractField[List[String]]("Names")
     val status = extractField[String]("Status")
