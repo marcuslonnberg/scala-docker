@@ -21,9 +21,8 @@ object Dependencies {
 
   val scalaTest = "org.scalatest" %% "scalatest" % "2.2.2" % "test"
 
-  object Projects {
-    val remoteApi = Seq(akkaActor, akkaStream, akkaHttp, jtar, commonsCodec, scalaTest, akkaTestkit)
-    val remoteModels = Seq(json4sNative, json4sExt, nscalaTime, scalaTest)
-  }
-
+  val all = Seq(
+    akkaActor, akkaStream, akkaHttp, jtar, commonsCodec,
+    json4sNative, json4sExt, nscalaTime, scalaTest, akkaTestkit
+  )
 }
