@@ -58,6 +58,12 @@ object ContainerConfigSerializer extends CustomSerializer[ContainerConfig](impli
 }, {
   case cc: ContainerConfig =>
     val image = Extraction.decompose(cc.image)
+
+    def emptyListToNull(xs: List[String]): JValue = {
+      if (xs.isEmpty) JNull
+      else JArray(xs.map(JString))
+    }
+
     ("Image" -> image) ~
       ("Hostname" -> cc.hostname) ~
       ("Domainname" -> cc.domainName) ~
@@ -73,11 +79,11 @@ object ContainerConfigSerializer extends CustomSerializer[ContainerConfig](impli
       ("Tty" -> cc.tty) ~
       ("OpenStdin" -> cc.openStdin) ~
       ("StdinOnce" -> cc.stdinOnce) ~
-      ("Env" -> cc.env) ~
-      ("Cmd" -> cc.cmd) ~
+      ("Env" -> emptyListToNull(cc.env)) ~
+      ("Cmd" -> emptyListToNull(cc.cmd)) ~
       ("Volumes" -> cc.volumes) ~
       ("WorkingDir" -> cc.workingDir) ~
-      ("Entrypoint" -> cc.entryPoint) ~
+      ("Entrypoint" -> emptyListToNull(cc.entryPoint)) ~
       ("NetworkDisabled" -> cc.networkDisabled) ~
       ("OnBuild" -> cc.onBuild)
 }))
