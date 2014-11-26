@@ -10,7 +10,7 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, Matchers, FlatSpecLike}
 import se.marcuslonnberg.scaladocker.remote.models.{BuildMessages, ImageName}
 
-class BuildImageApiSpec extends TestKit(ActorSystem("image-api")) with FlatSpecLike with Matchers with ScalaFutures with BeforeAndAfterAll with IntegrationPatience {
+class BuildImageApiSpec extends TestKit(ActorSystem("build-image-api")) with FlatSpecLike with Matchers with ScalaFutures with BeforeAndAfterAll with IntegrationPatience {
   implicit val mat = FlowMaterializer(MaterializerSettings(system))
 
   val client = DockerClient()
