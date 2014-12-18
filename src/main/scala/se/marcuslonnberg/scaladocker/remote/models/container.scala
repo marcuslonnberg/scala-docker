@@ -115,9 +115,16 @@ case class HostConfig(binds: List[Volume] = List.empty,
                       networkMode: String = "",
                       capAdd: List[String] = List.empty,
                       capDrop: List[String] = List.empty,
-                      restartPolicy: RestartPolicy = RestartPolicy())
+                      restartPolicy: RestartPolicy = NeverRestart)
 
-case class RestartPolicy(name: String = "", maximumRetryCount: Int = 0)
+case class RestartPolicy(name: String, maximumRetryCount: Int = 0)
+
+case object AlwaysRestart extends RestartPolicy(name = "always")
+
+case object NeverRestart extends RestartPolicy(name = "")
+
+case class RestartOnFailure(override val maximumRetryCount: Int = 0)
+  extends RestartPolicy(name = "on-failure", maximumRetryCount)
 
 case class DeviceMapping(pathOnHost: String, pathInContainer: String, cgroupPermissions: String)
 
