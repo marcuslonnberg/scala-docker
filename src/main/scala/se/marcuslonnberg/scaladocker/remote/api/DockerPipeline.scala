@@ -87,6 +87,8 @@ trait DockerPipeline extends JsonSupport {
       response.entity match {
         case HttpEntity.Chunked(contentType, chunks) =>
           chunks.map(_.data().utf8String)
+
+        // TODO handle other entities
       }
     }
 
