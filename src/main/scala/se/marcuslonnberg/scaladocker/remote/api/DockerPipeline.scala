@@ -57,7 +57,7 @@ trait DockerPipeline extends JsonSupport {
     }
   }
 
-  private[api] def sendAndUnmarhall[T](httpRequest: HttpRequest)
+  private[api] def sendAndUnmarshal[T](httpRequest: HttpRequest)
                                       (implicit system: ActorSystem,
                                        executionContext: ExecutionContext,
                                        manifest: Manifest[T],
