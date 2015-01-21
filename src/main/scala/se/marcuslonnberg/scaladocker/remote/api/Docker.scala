@@ -5,17 +5,17 @@ import akka.http.model.HttpMethods._
 import akka.http.model.Uri._
 import akka.http.model._
 import akka.http.model.headers.RawHeader
-import akka.http.unmarshalling.{PredefinedFromEntityUnmarshallers, FromResponseUnmarshaller}
-import akka.stream.MaterializerSettings
-import akka.stream.scaladsl2._
+import akka.http.unmarshalling.{FromResponseUnmarshaller, PredefinedFromEntityUnmarshallers}
+import akka.stream._
+import akka.stream.scaladsl._
 import org.apache.commons.codec.binary.Base64
 import org.json4s.JObject
 import org.json4s.native.Serialization._
 import org.reactivestreams.Publisher
 import se.marcuslonnberg.scaladocker.remote.models._
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import concurrent.duration.Duration
+import concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 object DockerClient {
   def apply()(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient = {
@@ -23,7 +23,7 @@ object DockerClient {
     val value = sys.env.get(key).filter(_.nonEmpty).getOrElse {
       sys.error(s"Environment variable $key is not set")
     }
-    apply(Uri(value), Seq.empty)
+    apply(Uri(value.replaceFirst("tcp:", "http:")), Seq.empty)
   }
 
   def apply(host: String, port: Int = 2375)(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient =
@@ -57,10 +57,8 @@ case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system:
       case _: ImageNotFoundException =>
         val create = images.create(containerConfig.image)
 
-        val eventualErrorSink = FutureSink[Error]
-        val mat = FlowFrom(create).collect { case e: Error => e}.withSink(eventualErrorSink).run()
-
-        eventualErrorSink.future(mat).map {
+        val eventualError = Source(create).collect { case e: Error => e}.runWith(HeadSink[Error]())
+        eventualError.map {
           case error =>
             throw new CreateImageException(containerConfig.image)
         }.recoverWith {
@@ -83,8 +81,6 @@ case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system:
 
 trait DockerCommands extends DockerPipeline {
   implicit def system: ActorSystem
-
-  implicit def materializerStream: akka.stream.FlowMaterializer = akka.stream.FlowMaterializer(MaterializerSettings(system)) // TODO: temporary
 
   implicit def materializer: FlowMaterializer
 
@@ -170,7 +166,7 @@ trait ImageCommands extends DockerCommands with AuthUtils {
 
     val headers = getAuthHeader(imageName.registry).toList
 
-    FlowFrom(requestChunkedLines(HttpRequest(POST, uri, headers)))
+    Source(requestChunkedLines(HttpRequest(POST, uri, headers)))
       .filter(_.nonEmpty)
       .map { line =>
       val obj = read[JObject](line)
@@ -181,7 +177,7 @@ trait ImageCommands extends DockerCommands with AuthUtils {
       out
     }.collect {
       case Some(v) => v
-    }.toPublisher()
+    }.runWith(PublisherSink())
   }
 
   def tag(from: ImageName, to: ImageName, force: Boolean = false): Future[Boolean] = {
@@ -195,7 +191,12 @@ trait ImageCommands extends DockerCommands with AuthUtils {
       .withQuery(parameters)
 
     sendRequest(HttpRequest(POST, uri))
-      .map(_.status == StatusCodes.Created)
+      .map { response =>
+      response.status match {
+        case StatusCodes.Created => true
+        case _ => false
+      }
+    }
   }
 
   def delete(name: ImageName, force: Boolean = false, noPrune: Boolean = false): Future[Boolean] = {
@@ -286,9 +287,9 @@ trait ContainerCommands extends DockerCommands {
     sendRequest(HttpRequest(DELETE, uri)) flatMap containerResponse(id)
   }
 
-  def logs(id: ContainerHashId, follow: Boolean = false, stdout: Boolean = true, stderr: Boolean = false, timestamps: Boolean = false): Publisher[String] = {
+  def logs(id: ContainerId, follow: Boolean = false, stdout: Boolean = true, stderr: Boolean = false, timestamps: Boolean = false): Publisher[String] = {
     val uri = baseUri
-      .withPath(Path / "containers" / id.hash / "logs")
+      .withPath(Path / "containers" / id.value / "logs")
       .withQuery(
         "follow" -> follow.toString,
         "stdout" -> stdout.toString,

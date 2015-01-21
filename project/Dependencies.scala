@@ -2,7 +2,7 @@ import sbt._
 
 object Dependencies {
   val akkaVersion = "2.3.6"
-  val akkaHttpStreamsVersion = "0.8"
+  val akkaHttpStreamsVersion = "1.0-M2"
   val json4sVersion = "3.2.10"
 
   val json4sNative = "org.json4s" %% "json4s-native" % json4sVersion

@@ -1,8 +1,7 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
-import akka.stream.MaterializerSettings
-import akka.stream.scaladsl2.FlowMaterializer
+import akka.stream.{FlowMaterializer, MaterializerSettings}
 import akka.testkit.TestKit
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FlatSpecLike, Inspectors, Matchers}

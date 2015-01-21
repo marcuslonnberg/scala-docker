@@ -3,8 +3,8 @@ package se.marcuslonnberg.scaladocker.remote.api
 import java.io.File
 
 import akka.actor.ActorSystem
-import akka.stream.MaterializerSettings
-import akka.stream.scaladsl2.{FutureSink, FlowFrom, FlowMaterializer}
+import akka.stream.scaladsl.{HeadSink, Source}
+import akka.stream.{FlowMaterializer, MaterializerSettings}
 import akka.testkit.TestKit
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, Matchers, FlatSpecLike}
@@ -24,11 +24,10 @@ class BuildImageApiSpec extends TestKit(ActorSystem("build-image-api")) with Fla
 
     val buildOutput = client.images.build(imageName, tarArchive)
 
-    val future = FutureSink[Boolean]
-    val matFlow = FlowFrom(buildOutput).collect {
+    val future = Source(buildOutput).collect {
       case BuildMessages.Output(out) if out.contains("yippee ki yay") => true
-    }.withSink(future).run()
+    }.runWith(HeadSink())
 
-    future.future(matFlow).futureValue shouldEqual true
+    future.futureValue shouldEqual true
   }
 }

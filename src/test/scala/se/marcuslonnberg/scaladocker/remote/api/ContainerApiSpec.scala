@@ -1,8 +1,10 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
-import akka.stream.MaterializerSettings
-import akka.stream.scaladsl2.FlowMaterializer
+import akka.http.Http
+import akka.http.model.{Uri, HttpMethods, HttpRequest}
+import akka.io.IO
+import akka.stream.{FlowMaterializer, MaterializerSettings}
 import akka.testkit.TestKit
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FlatSpecLike, Inspectors, Matchers}
@@ -61,6 +63,7 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with FlatSp
   it should "create, get and delete a container by name" in {
     val name = ContainerName("scala-container-name")
 
+    client.containers.delete(name).eitherValue
     val createId = client.containers.create(ContainerConfig(busybox), Some(name)).futureValue.id
 
     val info = client.containers.get(name).futureValue

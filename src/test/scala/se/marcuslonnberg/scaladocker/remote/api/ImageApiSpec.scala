@@ -1,8 +1,7 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
-import akka.stream.MaterializerSettings
-import akka.stream.scaladsl2.FlowMaterializer
+import akka.stream.{FlowMaterializer, MaterializerSettings}
 import akka.testkit.TestKit
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
@@ -21,10 +20,8 @@ class ImageApiSpec extends TestKit(ActorSystem("image-api")) with FlatSpecLike w
     val busybox = ImageName("busybox")
     // TODO: client.images.create(busybox)
 
-    assume {
-      client.images.tag(busybox, imageName).futureValue &&
-        client.images.tag(imageName, imageNameDelete).futureValue
-    }
+    client.images.tag(busybox, imageName).futureValue
+    client.images.tag(imageName, imageNameDelete).futureValue
   }
 
   override def afterAll() = {
@@ -58,7 +55,6 @@ class ImageApiSpec extends TestKit(ActorSystem("image-api")) with FlatSpecLike w
 
   def currentImageNames(): Seq[ImageName] = {
     val images = client.images.list().futureValue
-    val names = images.flatMap(_.repoTags)
-    names
+    images.flatMap(_.repoTags)
   }
 }

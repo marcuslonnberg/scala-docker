@@ -4,7 +4,7 @@ import java.io._
 
 import akka.http.model.Uri.Path
 import akka.http.model._
-import akka.stream.scaladsl2.FlowFrom
+import akka.stream.scaladsl.{PublisherSink, Source}
 import org.json4s.JObject
 import org.json4s.native.Serialization._
 import org.reactivestreams.Publisher
@@ -21,7 +21,7 @@ trait BuildCommand extends DockerCommands {
     val entity = HttpEntity(ContentType(MediaType.custom("application/tar")), readBytes(tarFile))
     val request = HttpRequest(HttpMethods.POST, uri, entity = entity)
 
-    FlowFrom(requestChunkedLines(request))
+    Source(requestChunkedLines(request))
       .filter(_.nonEmpty)
       .map { line =>
       val obj = read[JObject](line)
@@ -30,7 +30,7 @@ trait BuildCommand extends DockerCommands {
       maybeMessage
     }.collect {
       case Some(v) => v
-    }.toPublisher()
+    }.runWith(PublisherSink())
   }
 
   private def readBytes(file: File): Array[Byte] = {
