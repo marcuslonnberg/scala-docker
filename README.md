@@ -1,6 +1,4 @@
 Scala-Docker
 ============
 
-WIP
-
-Scala client to communicate with a Docker host.
+Scala client using reactive streams (akka-streams) to communicate with Docker hosts.
