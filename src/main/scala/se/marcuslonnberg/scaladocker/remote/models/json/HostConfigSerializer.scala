@@ -23,7 +23,7 @@ object HostConfigSerializer extends CustomSerializer[HostConfig](implicit format
     val networkMode = extractField[String]("NetworkMode")
     val capAdd = extractField[List[String]]("CapAdd")
     val capDrop = extractField[List[String]]("CapDrop")
-    val restartPolicy = extractFieldOpt[RestartPolicy]("RestartPolicy").getOrElse(RestartPolicy())
+    val restartPolicy = extractFieldOpt[RestartPolicy]("RestartPolicy").getOrElse(NeverRestart)
 
     HostConfig(
       binds = binds,

@@ -117,14 +117,25 @@ case class HostConfig(binds: List[Volume] = List.empty,
                       capDrop: List[String] = List.empty,
                       restartPolicy: RestartPolicy = NeverRestart)
 
-case class RestartPolicy(name: String, maximumRetryCount: Int = 0)
+trait RestartPolicy {
+  def name: String
+}
 
-case object AlwaysRestart extends RestartPolicy(name = "always")
+case object NeverRestart extends RestartPolicy {
+  val name = ""
+}
 
-case object NeverRestart extends RestartPolicy(name = "")
+case object AlwaysRestart extends RestartPolicy {
+  val name = "always"
+}
 
-case class RestartOnFailure(override val maximumRetryCount: Int = 0)
-  extends RestartPolicy(name = "on-failure", maximumRetryCount)
+object RestartOnFailure {
+  val name = "on-failure"
+}
+
+case class RestartOnFailure(maximumRetryCount: Int = 0) extends RestartPolicy {
+  val name = RestartOnFailure.name
+}
 
 case class DeviceMapping(pathOnHost: String, pathInContainer: String, cgroupPermissions: String)
 

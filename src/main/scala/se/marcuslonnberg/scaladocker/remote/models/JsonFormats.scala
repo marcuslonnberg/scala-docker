@@ -153,5 +153,6 @@ object JsonFormats {
     ContainerConfigSerializer +
     ContainerStatusSerializer +
     ContainerStateSerializer +
-    PortBindingSerializer
+    PortBindingSerializer +
+    RestartPolicySerializer
 }
