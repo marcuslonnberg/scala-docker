@@ -1,14 +1,14 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
-import akka.stream.{FlowMaterializer, MaterializerSettings}
+import akka.stream.{ActorFlowMaterializer, ActorFlowMaterializerSettings}
 import akka.testkit.TestKit
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import se.marcuslonnberg.scaladocker.remote.models.ImageName
 
 class ImageApiSpec extends TestKit(ActorSystem("image-api")) with FlatSpecLike with Matchers with ScalaFutures with BeforeAndAfterAll with IntegrationPatience {
-  implicit val mat = FlowMaterializer(MaterializerSettings(system))
+  implicit val mat = ActorFlowMaterializer(ActorFlowMaterializerSettings(system))
 
   val client = DockerClient()
 

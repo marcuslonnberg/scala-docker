@@ -1,17 +1,14 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
-import akka.http.Http
-import akka.http.model.{Uri, HttpMethods, HttpRequest}
-import akka.io.IO
-import akka.stream.{FlowMaterializer, MaterializerSettings}
+import akka.stream.{ActorFlowMaterializer, ActorFlowMaterializerSettings}
 import akka.testkit.TestKit
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FlatSpecLike, Inspectors, Matchers}
 import se.marcuslonnberg.scaladocker.remote.models._
 
 class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with FlatSpecLike with Matchers with ScalaFutures with IntegrationPatience with Inspectors {
-  implicit val mat = FlowMaterializer(MaterializerSettings(system))
+  implicit val mat = ActorFlowMaterializer(ActorFlowMaterializerSettings(system))
 
   val client = DockerClient()
 
