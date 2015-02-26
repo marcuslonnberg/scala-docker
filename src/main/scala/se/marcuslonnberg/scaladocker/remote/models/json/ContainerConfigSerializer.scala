@@ -25,13 +25,13 @@ object ContainerConfigSerializer extends CustomSerializer[ContainerConfig](impli
     val tty = extractFieldOpt[Boolean]("Tty")
     val openStdin = extractFieldOpt[Boolean]("OpenStdin")
     val stdinOnce = extractFieldOpt[Boolean]("StdinOnce")
-    val env = extractField[List[String]]("Env")
-    val cmd = extractField[List[String]]("Cmd")
-    val volumes = extractField[List[String]]("Volumes")
+    val env = extractFieldList[String]("Env")
+    val cmd = extractFieldList[String]("Cmd")
+    val volumes = extractFieldList[String]("Volumes")
     val workingDir = extractFieldOpt[String]("WorkingDir")
-    val entrypoint = extractField[List[String]]("Entrypoint")
+    val entrypoint = extractFieldList[String]("Entrypoint")
     val networkDisabled = extractFieldOpt[Boolean]("NetworkDisabled")
-    val onBuild = extractField[List[String]]("OnBuild")
+    val onBuild = extractFieldList[String]("OnBuild")
 
     ContainerConfig(image = image,
       hostname = hostname,

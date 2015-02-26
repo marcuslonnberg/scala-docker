@@ -15,10 +15,10 @@ object ContainerStatusSerializer extends CustomSerializer[ContainerStatus](impli
     val created = new DateTime(extractField[Long]("Created") * 1000)
     val id = extractField[ContainerHashId]("Id")
     val image = extractField[ImageName]("Image")
-    val names = extractField[List[String]]("Names")
+    val names = extractFieldList[String]("Names")
     val status = extractField[String]("Status")
 
-    val ports = extractField[List[JObject]]("Ports").map { implicit o =>
+    val ports = extractFieldList[JObject]("Ports").map { implicit o =>
       val containerPort = extractField[Int]("PrivatePort")
       val protocol = extractField[String]("Type")
       val hostPort = extractFieldOpt[Int]("PublicPort")

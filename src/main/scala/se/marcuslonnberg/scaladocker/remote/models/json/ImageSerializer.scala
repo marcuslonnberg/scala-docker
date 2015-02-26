@@ -14,7 +14,7 @@ object ImageSerializer extends CustomSerializer[Image](implicit formats => ( {
     val created = new DateTime(extractField[Long]("Created") * 1000)
     val id = extractField[ImageId]("Id")
     val parentId = extractField[ImageId]("ParentId")
-    val repoTags = extractField[List[ImageName]]("RepoTags")
+    val repoTags = extractFieldList[ImageName]("RepoTags")
     val size = extractField[Long]("Size")
     val virtualSize = extractField[Long]("VirtualSize")
 

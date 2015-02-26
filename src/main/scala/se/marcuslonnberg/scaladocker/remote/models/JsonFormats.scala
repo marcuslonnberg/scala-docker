@@ -20,6 +20,10 @@ object JsonFormatHelpers {
   def extractFieldOpt[T](fieldName: String)(implicit obj: JObject, manifest: Manifest[T], formats: Formats): Option[T] = {
     (obj \ fieldName).extractOpt[T]
   }
+
+  def extractFieldList[T](fieldName: String)(implicit obj: JObject, manifest: Manifest[T], formats: Formats): List[T] = {
+    (obj \ fieldName).extractOpt[List[T]].getOrElse(List.empty)
+  }
 }
 
 object JsonFormats {

@@ -10,19 +10,19 @@ object HostConfigSerializer extends CustomSerializer[HostConfig](implicit format
   case obj: JObject =>
     implicit val o = obj
 
-    val binds = extractField[List[String]]("Binds").map(JsonFormats.deserializeBinding)
-    val lxcConf = extractField[List[String]]("LxcConf")
+    val binds = extractFieldList[String]("Binds").map(JsonFormats.deserializeBinding)
+    val lxcConf = extractFieldList[String]("LxcConf")
     val privileged = extractField[Boolean]("Privileged")
     val portBindings = JsonFormats.deserializePortBindings(extractField[JValue]("PortBindings"))
-    val links = extractField[List[ContainerLink]]("Links")
+    val links = extractFieldList[ContainerLink]("Links")
     val publishAllPorts = extractField[Boolean]("PublishAllPorts")
-    val dns = extractField[List[String]]("Dns")
-    val dnsSearch = extractField[List[String]]("DnsSearch")
-    val volumesFrom = extractField[List[String]]("VolumesFrom")
-    val devices = extractField[List[DeviceMapping]]("Devices")
+    val dns = extractFieldList[String]("Dns")
+    val dnsSearch = extractFieldList[String]("DnsSearch")
+    val volumesFrom = extractFieldList[String]("VolumesFrom")
+    val devices = extractFieldList[DeviceMapping]("Devices")
     val networkMode = extractField[String]("NetworkMode")
-    val capAdd = extractField[List[String]]("CapAdd")
-    val capDrop = extractField[List[String]]("CapDrop")
+    val capAdd = extractFieldList[String]("CapAdd")
+    val capDrop = extractFieldList[String]("CapDrop")
     val restartPolicy = extractFieldOpt[RestartPolicy]("RestartPolicy").getOrElse(NeverRestart)
 
     HostConfig(
