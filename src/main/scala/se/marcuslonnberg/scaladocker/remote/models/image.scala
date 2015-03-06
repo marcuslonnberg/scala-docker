@@ -49,10 +49,13 @@ object ImageName {
 case class ImageName(registry: Option[String] = None, namespace: Option[String] = None,
                      repository: String, tag: String = "latest") extends ImageIdentifier {
   namespace.foreach { n =>
-    require(n.matches("[a-z0-9_]{4,30}"), s"Namespace name ('$n') can only contain characters [a-z0-9_] and have a size between 4 and 30")
+    require(n.matches("[a-z0-9-_]{4,30}"),
+      s"Namespace name ('$n') can only contain characters [a-z0-9_] and have a size between 4 and 30")
   }
-  require(repository.matches("[a-z0-9-_.]+") || repository == "<none>", s"Repository name ('$repository') can only contain characters [a-z0-9-_.]")
-  require(tag.matches("[A-Za-z0-9_.-]{2,30}") || tag == "<none>", s"Tag name ('$tag') can only contain characters [A-Za-z0-9_] and have a size between 2 and 30")
+  require(repository.matches("[a-z0-9-_.]+") || repository == "<none>",
+    s"Repository name ('$repository') can only contain characters [a-z0-9-_.]")
+  require(tag.matches("[\\w][\\w.-]{0,127}") || tag == "<none>",
+    s"Tag name ('$tag') can only contain characters [A-Za-z0-9_.-] and have a length between 1 and 128")
 
   override def toString = {
     val registryString = registry.fold("")(_ + "/")

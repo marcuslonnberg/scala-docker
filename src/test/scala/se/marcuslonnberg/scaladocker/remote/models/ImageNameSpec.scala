@@ -75,7 +75,6 @@ class ImageNameSpec extends FlatSpec with Matchers {
     a[IllegalArgumentException] should be thrownBy ImageName("n/image")
     a[IllegalArgumentException] should be thrownBy ImageName("NAMESPACE/image")
     a[IllegalArgumentException] should be thrownBy ImageName("nAmeSpace/image")
-    a[IllegalArgumentException] should be thrownBy ImageName("name-space/image")
     a[IllegalArgumentException] should be thrownBy ImageName("verylooooooooooooooooooooooooooooooooong/image")
     a[IllegalArgumentException] should be thrownBy ImageName("!@#$/image")
   }
@@ -88,8 +87,7 @@ class ImageNameSpec extends FlatSpec with Matchers {
   }
 
   it should "not parse invalid tag names" in {
-    a[IllegalArgumentException] should be thrownBy ImageName("image:s")
-    a[IllegalArgumentException] should be thrownBy ImageName("image:verylooooooooooooooooooooooooooooooooong")
+    a[IllegalArgumentException] should be thrownBy ImageName("image:verylong" + ("g" * 128))
     a[IllegalArgumentException] should be thrownBy ImageName("image:!@#$")
   }
 }
