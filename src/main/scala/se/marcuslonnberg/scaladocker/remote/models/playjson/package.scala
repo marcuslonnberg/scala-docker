@@ -4,18 +4,22 @@ import play.api.libs.json._
 import se.marcuslonnberg.scaladocker.remote.models.playjson.JsonUtils._
 
 package object playjson {
-  implicit val containerHashIdReads =
-    JsPath.read[String].map(ContainerHashId)
+  implicit val imageIdReads = JsPath.read[String].map(ImageId)
 
-  implicit val containerHashIdWrites = new Writes[ContainerHashId] {
-    override def writes(o: ContainerHashId): JsValue = JsString(o.value)
+  implicit val imageIdWrites: Writes[ImageId] = Writes { imageId =>
+    JsString(imageId.hash)
   }
 
-  implicit val imageNameReads =
-    JsPath.read[String].map(ImageName.apply)
+  implicit val containerHashIdReads = JsPath.read[String].map(ContainerHashId)
 
-  implicit val imageNameWrites = new Writes[ImageName] {
-    override def writes(o: ImageName): JsValue = JsString(o.toString)
+  implicit val containerHashIdWrites: Writes[ContainerHashId] = Writes { containerHashId =>
+    JsString(containerHashId.hash)
+  }
+
+  implicit val imageNameReads = JsPath.read[String].map(ImageName.apply)
+
+  implicit val imageNameWrites: Writes[ImageName] = Writes { imageName =>
+    JsString(imageName.toString)
   }
 
   case class JsonPort(PrivatePort: Int, Type: String, PublicPort: Option[Int], IP: Option[String])
@@ -50,5 +54,7 @@ package object playjson {
   }
 
   implicit val containerStatusFormat = JsonUtils.upperCamelCase(Json.format[ContainerStatus])
+
+  implicit val imageFormat = JsonUtils.upperCamelCase(Json.format[Image])
 
 }

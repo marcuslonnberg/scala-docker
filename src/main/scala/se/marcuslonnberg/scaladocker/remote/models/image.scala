@@ -2,12 +2,14 @@ package se.marcuslonnberg.scaladocker.remote.models
 
 import org.joda.time.DateTime
 
-case class Image(created: DateTime,
-                 id: ImageId,
-                 parentId: ImageId,
-                 repoTags: List[ImageName],
-                 size: Long,
-                 virtualSize: Long)
+case class Image(
+  created: DateTime,
+  id: ImageId,
+  parentId: ImageId,
+  repoTags: List[ImageName],
+  size: Long,
+  virtualSize: Long
+)
 
 sealed trait ImageIdentifier
 
@@ -47,7 +49,7 @@ object ImageName {
 }
 
 case class ImageName(registry: Option[String] = None, namespace: Option[String] = None,
-                     repository: String, tag: String = "latest") extends ImageIdentifier {
+  repository: String, tag: String = "latest") extends ImageIdentifier {
   namespace.foreach { n =>
     require(n.matches("[a-z0-9-_]{4,30}"),
       s"Namespace name ('$n') can only contain characters [a-z0-9_] and have a size between 4 and 30")

@@ -22,7 +22,7 @@ class JsonSpec extends FlatSpec with Matchers {
   }
 
   "Image" should "be serializable and deserializable with JSON" in {
-    val state = readResource[Image]("image.json")
+    val state = readResourcePlay[Image]("image.json")
     compare(state)
   }
 
