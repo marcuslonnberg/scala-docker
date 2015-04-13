@@ -184,7 +184,11 @@ case class ContainerInfo(
   hostConfig: HostConfig
 )
 
-case class Volume(hostPath: String, containerPath: String, rw: Boolean = true)
+case class Volume(
+  hostPath: String,
+  containerPath: String,
+  rw: Boolean = true
+)
 
 case class ContainerStatus(
   command: String,

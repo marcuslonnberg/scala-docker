@@ -1,9 +1,17 @@
 package se.marcuslonnberg.scaladocker.remote.models
 
+import org.joda.time.DateTime
 import play.api.libs.json._
 import se.marcuslonnberg.scaladocker.remote.models.playjson.JsonUtils._
 
 package object playjson {
+  implicit val dateTimeSecondsFormat = Format[DateTime](
+    JsPath.read[Long].map(seconds => new DateTime(seconds * 1000)),
+    Writes { dt =>
+      JsNumber(dt.getMillis / 1000)
+    }
+  )
+
   implicit val imageIdReads = JsPath.read[String].map(ImageId)
 
   implicit val imageIdWrites: Writes[ImageId] = Writes { imageId =>
@@ -36,7 +44,9 @@ package object playjson {
             port -> Some(PortBinding(hostIp, hostPort))
           case (Some(port: Port), _) =>
             port -> None
-        }.toMapGroup.mapValues(_.flatten).toMap
+        }.toMapGroup.map {
+          case (k, v) => k -> v.flatten
+        }
       }
     }
 
@@ -57,4 +67,19 @@ package object playjson {
 
   implicit val imageFormat = JsonUtils.upperCamelCase(Json.format[Image])
 
+  implicit val volumeBindingReads = Format[Volume](Reads { in =>
+    in.validate[String].flatMap { binding =>
+      binding.split(":") match {
+        case Array(host, container) =>
+          JsSuccess(Volume(host, container, rw = true))
+        case Array(host, container, readOnly) =>
+          JsSuccess(Volume(host, container, readOnly != "ro"))
+        case _ =>
+          JsError(s"Could not parse binding: $binding")
+      }
+    }
+  }, Writes { volume =>
+    val rwSeq = if (volume.rw) Seq.empty else Seq("ro")
+    JsString((Seq(volume.hostPath, volume.containerPath) ++ rwSeq).mkString(":"))
+  })
 }
