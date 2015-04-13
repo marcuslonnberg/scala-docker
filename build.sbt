@@ -1,5 +1,3 @@
-import Dependencies._
-
 name := "scala-docker"
 
 organization in ThisBuild := "se.marcuslonnberg"
@@ -8,7 +6,10 @@ version := "0.1.0-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.11.6"
 
-libraryDependencies ++= all
+libraryDependencies ++= Dependencies.all
+resolvers ++= Dependencies.resolvers
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.1" cross CrossVersion.full)
 
 initialCommands in console :=
   """import se.marcuslonnberg.scaladocker.remote.api._

@@ -3,7 +3,8 @@ package se.marcuslonnberg.scaladocker.remote.models
 import org.json4s.Extraction
 import org.json4s.native.Serialization._
 import org.scalatest.{FlatSpec, Matchers}
-
+import play.api.libs.json.{Json, Reads}
+import se.marcuslonnberg.scaladocker.remote.models.playjson._
 import scala.io.Source
 
 class JsonSpec extends FlatSpec with Matchers {
@@ -16,7 +17,7 @@ class JsonSpec extends FlatSpec with Matchers {
   }
 
   "ContainerStatus" should "be serializable and deserializable with JSON" in {
-    val state = readResource[ContainerStatus]("container-status.json")
+    val state = readResourcePlay[ContainerStatus]("container-status.json")
     compare(state)
   }
 
@@ -34,6 +35,11 @@ class JsonSpec extends FlatSpec with Matchers {
     test(Volume(hostPath = "/a", containerPath = "/b", rw = true), "/a:/b")
     test(Volume(hostPath = "/a", containerPath = "/b", rw = false), "/a:/b:ro")
     test(Volume(hostPath = "/a/b/c/d/", containerPath = "/e/f/g/h/", rw = true), "/a/b/c/d/:/e/f/g/h/")
+  }
+
+  def readResourcePlay[T: Reads](path: String): T = {
+    val rawString = Source.fromURL(getClass.getResource(path))
+    Json.parse(rawString.mkString).as[T]
   }
 
   def readResource[T: Manifest](path: String): T = {

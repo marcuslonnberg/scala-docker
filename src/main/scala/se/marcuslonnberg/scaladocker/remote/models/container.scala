@@ -65,28 +65,30 @@ case class PortBinding(hostIp: String, hostPort: Int)
  * @param cpuShares CPU shares (relative weight vs. other containers)
  * @param cpuset Cpuset, examples: `"0-2"`, `"0,1"`
  */
-case class ContainerConfig(image: ImageName,
-                           hostname: Option[String] = None,
-                           domainName: Option[String] = None,
-                           user: Option[String] = None,
-                           memory: Option[Long] = None,
-                           memorySwap: Option[Long] = None,
-                           cpuShares: Option[Long] = None,
-                           cpuset: Option[String] = None,
-                           attachStdin: Option[Boolean] = None,
-                           attachStdout: Option[Boolean] = None,
-                           attachStderr: Option[Boolean] = None,
-                           exposedPorts: Map[Port, Seq[PortBinding]] = Map.empty,
-                           tty: Option[Boolean] = None,
-                           openStdin: Option[Boolean] = None,
-                           stdinOnce: Option[Boolean] = None,
-                           env: List[String] = List.empty,
-                           cmd: List[String] = List.empty,
-                           volumes: List[String] = List.empty,
-                           workingDir: Option[String] = None,
-                           entryPoint: List[String] = List.empty,
-                           networkDisabled: Option[Boolean] = None,
-                           onBuild: List[String] = List.empty)
+case class ContainerConfig(
+  image: ImageName,
+  hostname: Option[String] = None,
+  domainName: Option[String] = None,
+  user: Option[String] = None,
+  memory: Option[Long] = None,
+  memorySwap: Option[Long] = None,
+  cpuShares: Option[Long] = None,
+  cpuset: Option[String] = None,
+  attachStdin: Option[Boolean] = None,
+  attachStdout: Option[Boolean] = None,
+  attachStderr: Option[Boolean] = None,
+  exposedPorts: Map[Port, Seq[PortBinding]] = Map.empty,
+  tty: Option[Boolean] = None,
+  openStdin: Option[Boolean] = None,
+  stdinOnce: Option[Boolean] = None,
+  env: List[String] = List.empty,
+  cmd: List[String] = List.empty,
+  volumes: List[String] = List.empty,
+  workingDir: Option[String] = None,
+  entryPoint: List[String] = List.empty,
+  networkDisabled: Option[Boolean] = None,
+  onBuild: List[String] = List.empty
+)
 
 object ContainerLink {
   def unapply(link: String) = {
@@ -102,20 +104,22 @@ case class ContainerLink(containerName: String, aliasName: Option[String] = None
   def mkString = containerName + aliasName.fold("")(":" + _)
 }
 
-case class HostConfig(binds: List[Volume] = List.empty,
-                      lxcConf: List[String] = List.empty,
-                      privileged: Boolean = false,
-                      portBindings: Map[Port, Seq[PortBinding]] = Map.empty,
-                      links: List[ContainerLink] = List.empty,
-                      publishAllPorts: Boolean = false,
-                      dns: List[String] = List.empty,
-                      dnsSearch: List[String] = List.empty,
-                      volumesFrom: List[String] = List.empty,
-                      devices: List[DeviceMapping] = List.empty,
-                      networkMode: String = "",
-                      capAdd: List[String] = List.empty,
-                      capDrop: List[String] = List.empty,
-                      restartPolicy: RestartPolicy = NeverRestart)
+case class HostConfig(
+  binds: List[Volume] = List.empty,
+  lxcConf: List[String] = List.empty,
+  privileged: Boolean = false,
+  portBindings: Map[Port, Seq[PortBinding]] = Map.empty,
+  links: List[ContainerLink] = List.empty,
+  publishAllPorts: Boolean = false,
+  dns: List[String] = List.empty,
+  dnsSearch: List[String] = List.empty,
+  volumesFrom: List[String] = List.empty,
+  devices: List[DeviceMapping] = List.empty,
+  networkMode: String = "",
+  capAdd: List[String] = List.empty,
+  capDrop: List[String] = List.empty,
+  restartPolicy: RestartPolicy = NeverRestart
+)
 
 trait RestartPolicy {
   def name: String
@@ -141,45 +145,53 @@ case class DeviceMapping(pathOnHost: String, pathInContainer: String, cgroupPerm
 
 case class CreateContainerResponse(id: ContainerHashId, warnings: List[String])
 
-case class ContainerState(running: Boolean,
-                          paused: Boolean,
-                          restarting: Boolean,
-                          pid: Int,
-                          exitCode: Int,
-                          startedAt: Option[DateTime] = None,
-                          finishedAt: Option[DateTime] = None)
+case class ContainerState(
+  running: Boolean,
+  paused: Boolean,
+  restarting: Boolean,
+  pid: Int,
+  exitCode: Int,
+  startedAt: Option[DateTime] = None,
+  finishedAt: Option[DateTime] = None
+)
 
-case class NetworkSettings(ipAddress: String,
-                           ipPrefixLength: Int,
-                           gateway: String,
-                           bridge: String,
-                           ports: Map[Port, Seq[PortBinding]])
+case class NetworkSettings(
+  ipAddress: String,
+  ipPrefixLength: Int,
+  gateway: String,
+  bridge: String,
+  ports: Map[Port, Seq[PortBinding]]
+)
 
-case class ContainerInfo(id: ContainerHashId,
-                         created: DateTime,
-                         path: String,
-                         args: List[String],
-                         config: ContainerConfig,
-                         state: ContainerState,
-                         image: String,
-                         networkSettings: NetworkSettings,
-                         resolvConfPath: String,
-                         hostnamePath: String,
-                         hostsPath: String,
-                         name: String,
-                         driver: String,
-                         execDriver: String,
-                         mountLabel: Option[String] = None,
-                         processLabel: Option[String] = None,
-                         volumes: List[Volume] = List.empty,
-                         hostConfig: HostConfig)
+case class ContainerInfo(
+  id: ContainerHashId,
+  created: DateTime,
+  path: String,
+  args: List[String],
+  config: ContainerConfig,
+  state: ContainerState,
+  image: String,
+  networkSettings: NetworkSettings,
+  resolvConfPath: String,
+  hostnamePath: String,
+  hostsPath: String,
+  name: String,
+  driver: String,
+  execDriver: String,
+  mountLabel: Option[String] = None,
+  processLabel: Option[String] = None,
+  volumes: List[Volume] = List.empty,
+  hostConfig: HostConfig
+)
 
 case class Volume(hostPath: String, containerPath: String, rw: Boolean = true)
 
-case class ContainerStatus(command: String,
-                           created: DateTime,
-                           id: ContainerHashId,
-                           image: ImageName,
-                           names: List[String],
-                           ports: Map[Port, Seq[PortBinding]] = Map.empty,
-                           status: String)
+case class ContainerStatus(
+  command: String,
+  created: DateTime,
+  id: ContainerHashId,
+  image: ImageName,
+  names: List[String],
+  ports: Map[Port, Seq[PortBinding]] = Map.empty,
+  status: String
+)
