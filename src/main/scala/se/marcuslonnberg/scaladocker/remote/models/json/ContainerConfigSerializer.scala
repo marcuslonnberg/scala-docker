@@ -14,23 +14,23 @@ object ContainerConfigSerializer extends CustomSerializer[ContainerConfig](impli
     val hostname = extractFieldOpt[String]("Hostname")
     val domainName = extractFieldOpt[String]("Domainname")
     val user = extractFieldOpt[String]("User")
-    val memory = extractFieldOpt[Long]("Memory")
-    val memorySwap = extractFieldOpt[Long]("MemorySwap")
-    val cpuShares = extractFieldOpt[Long]("CpuShares")
+    val memory = extractField[Long]("Memory")
+    val memorySwap = extractField[Long]("MemorySwap")
+    val cpuShares = extractField[Long]("CpuShares")
     val cpuset = extractFieldOpt[String]("Cpuset")
-    val attachStdin = extractFieldOpt[Boolean]("AttachStdin")
-    val attachStdout = extractFieldOpt[Boolean]("AttachStdout")
-    val attachStderr = extractFieldOpt[Boolean]("AttachStderr")
-    val exposedPorts = JsonFormats.deserializePortBindings(extractField[JValue]("ExposedPorts"))
-    val tty = extractFieldOpt[Boolean]("Tty")
-    val openStdin = extractFieldOpt[Boolean]("OpenStdin")
-    val stdinOnce = extractFieldOpt[Boolean]("StdinOnce")
+    val attachStdin = extractField[Boolean]("AttachStdin")
+    val attachStdout = extractField[Boolean]("AttachStdout")
+    val attachStderr = extractField[Boolean]("AttachStderr")
+    val exposedPorts = JsonFormats.deserializePortBindings(extractField[JValue]("ExposedPorts")).keys.toSeq
+    val tty = extractField[Boolean]("Tty")
+    val openStdin = extractField[Boolean]("OpenStdin")
+    val stdinOnce = extractField[Boolean]("StdinOnce")
     val env = extractFieldList[String]("Env")
     val cmd = extractFieldList[String]("Cmd")
     val volumes = extractFieldList[String]("Volumes")
     val workingDir = extractFieldOpt[String]("WorkingDir")
     val entrypoint = extractFieldList[String]("Entrypoint")
-    val networkDisabled = extractFieldOpt[Boolean]("NetworkDisabled")
+    val networkDisabled = extractField[Boolean]("NetworkDisabled")
     val onBuild = extractFieldList[String]("OnBuild")
 
     ContainerConfig(image = image,
@@ -59,9 +59,9 @@ object ContainerConfigSerializer extends CustomSerializer[ContainerConfig](impli
   case cc: ContainerConfig =>
     val image = Extraction.decompose(cc.image)
 
-    def emptyListToNull(xs: List[String]): JValue = {
+    def emptySeqToNull(xs: Seq[String]): JValue = {
       if (xs.isEmpty) JNull
-      else JArray(xs.map(JString))
+      else JArray(xs.map(JString).toList)
     }
 
     ("Image" -> image) ~
@@ -75,15 +75,15 @@ object ContainerConfigSerializer extends CustomSerializer[ContainerConfig](impli
       ("AttachStdin" -> cc.attachStdin) ~
       ("AttachStdout" -> cc.attachStdout) ~
       ("AttachStderr" -> cc.attachStderr) ~
-      ("ExposedPorts" -> JsonFormats.serializePortBindings(cc.exposedPorts)) ~
+      ("ExposedPorts" -> JsonFormats.serializePortBindings(cc.exposedPorts.map(_ -> Seq.empty).toMap)) ~
       ("Tty" -> cc.tty) ~
       ("OpenStdin" -> cc.openStdin) ~
       ("StdinOnce" -> cc.stdinOnce) ~
-      ("Env" -> emptyListToNull(cc.env)) ~
-      ("Cmd" -> emptyListToNull(cc.cmd)) ~
+      ("Env" -> emptySeqToNull(cc.env)) ~
+      ("Cmd" -> emptySeqToNull(cc.cmd)) ~
       ("Volumes" -> cc.volumes) ~
       ("WorkingDir" -> cc.workingDir) ~
-      ("Entrypoint" -> emptyListToNull(cc.entryPoint)) ~
+      ("Entrypoint" -> emptySeqToNull(cc.entryPoint)) ~
       ("NetworkDisabled" -> cc.networkDisabled) ~
       ("OnBuild" -> cc.onBuild)
 }))

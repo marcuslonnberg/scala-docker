@@ -1,0 +1,37 @@
+{
+  "AttachStderr": true,
+  "AttachStdin": true,
+  "AttachStdout": true,
+  "Cmd": null,
+  "CpuShares": 0,
+  "Cpuset": "",
+  "Domainname": "",
+  "Entrypoint": [
+    "java",
+    "-jar",
+    "fancy-service.jar"
+  ],
+  "Env": [
+    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "JAVA_VERSION=8u40",
+    "JAVA_DEBIAN_VERSION=8u40-b27-1",
+    "CA_CERTIFICATES_JAVA_VERSION=20140324"
+  ],
+  "ExposedPorts": {
+    "8080/tcp": {}
+  },
+  "Hostname": "c71b48221538",
+  "Image": "demo/fancy-service",
+  "MacAddress": "",
+  "Memory": 0,
+  "MemorySwap": 0,
+  "NetworkDisabled": false,
+  "OnBuild": null,
+  "OpenStdin": true,
+  "PortSpecs": null,
+  "StdinOnce": true,
+  "Tty": true,
+  "User": "",
+  "Volumes": null,
+  "WorkingDir": "/app"
+}

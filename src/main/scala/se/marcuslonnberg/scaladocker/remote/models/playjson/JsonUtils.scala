@@ -1,8 +1,9 @@
 package se.marcuslonnberg.scaladocker.remote.models.playjson
 
+import play.api.libs.functional.Functor
 import play.api.libs.json._
 
-import scala.collection.{mutable, immutable}
+import scala.collection.{immutable, mutable}
 
 object JsonUtils {
   private def mapKeys[KI, KO, V](pairs: Seq[(KI, V)])(f: KI => KO): Seq[(KO, V)] = {
@@ -41,6 +42,10 @@ object JsonUtils {
     }
   }
 
+  implicit val functorJsResult: Functor[JsResult] = new Functor[JsResult] {
+    override def fmap[A, B](m: JsResult[A], f: A => B) = m map f
+  }
+
   implicit class RichSeq[A](seq: Seq[A]) {
     def toMapGroup[T, U](implicit ev: A <:< (T, U)): immutable.Map[T, Seq[U]] = {
       val m = mutable.Map.empty[T, Seq[U]]
@@ -56,4 +61,5 @@ object JsonUtils {
       m.toMap
     }
   }
+
 }

@@ -57,7 +57,7 @@ case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system:
       case _: ImageNotFoundException =>
         val create = images.create(containerConfig.image)
 
-        val eventualError = Source(create).collect { case e: Error => e}.runWith(HeadSink[Error]())
+        val eventualError = Source(create).collect { case e: CreateMessages.Error => e}.runWith(HeadSink[CreateMessages.Error]())
         eventualError.map {
           case error =>
             throw new CreateImageException(containerConfig.image)

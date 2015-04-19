@@ -17,6 +17,12 @@ class JsonSpec extends FlatSpec with Matchers {
     compare(info)
   }
 
+  "ContainerConfig" should "be serializable and deserializable with JSON" in {
+    val containerConfigJson = readResourcePlay("container-config.json")
+    val containerConfig = containerConfigJson.as[ContainerConfig]
+    compareJson2[ContainerConfig](containerConfig)
+  }
+
   "ContainerStatus" should "be serializable and deserializable with JSON" in {
     val statusJson = readResourcePlay("container-status.json")
     compareJson[ContainerStatus](statusJson)
@@ -62,6 +68,12 @@ class JsonSpec extends FlatSpec with Matchers {
   def compareJson[T: Format](obj: JsValue) {
     val o = obj.as[T]
     val value = Json.toJson(o)
+    value shouldEqual obj
+  }
+
+  def compareJson2[T: Format](obj: T) {
+    val expectedJson = Json.toJson(obj)
+    val value = expectedJson.as[T]
     value shouldEqual obj
   }
 }
