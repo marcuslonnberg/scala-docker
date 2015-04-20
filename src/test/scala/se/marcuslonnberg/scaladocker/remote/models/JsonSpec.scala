@@ -18,6 +18,12 @@ class JsonSpec extends FlatSpec with Matchers {
     compareJson2(info)
   }
 
+  it should "be serializable and deserializable with JSON (2)" in {
+    val infoJson = readResourcePlay("container-info-2.json")
+    val info = infoJson.as[ContainerInfo]
+    compareJson2(info)
+  }
+
   "ContainerConfig" should "be serializable and deserializable with JSON" in {
     val containerConfigJson = readResourcePlay("container-config.json")
     val containerConfig = containerConfigJson.as[ContainerConfig]

@@ -8,6 +8,7 @@ import akka.http.unmarshalling.Unmarshaller
 import akka.stream.FlowMaterializer
 import org.json4s.native.Serialization
 import org.json4s.{Formats, MappingException}
+import play.api.libs.json.{JsResultException, Json, Writes, Reads}
 import se.marcuslonnberg.scaladocker.remote.models.JsonFormats
 
 import scala.concurrent.ExecutionContext
@@ -36,4 +37,27 @@ trait JsonSupport {
 
   implicit def json4sMarshallerEntity[T <: AnyRef]: Marshaller[T, RequestEntity] =
     Marshaller.withFixedCharset[T, RequestEntity](MediaTypes.`application/json`, HttpCharsets.`UTF-8`)(c => HttpEntity(serialization.write(c)))
+}
+
+trait PlayJsonSupport {
+  implicit def playJsonUnmarshallerResponse[T](implicit ec: ExecutionContext, reader: Reads[T], materializer: FlowMaterializer): Unmarshaller[HttpResponse, T] =
+    Unmarshaller[HttpResponse, T]({
+      case x: HttpResponse =>
+        playJsonUnmarshallerEntity.apply(x.entity)
+    })
+
+  implicit def playJsonUnmarshallerEntity[T](implicit ec: ExecutionContext, reader: Reads[T], materializer: FlowMaterializer): Unmarshaller[HttpEntity, T] =
+    Unmarshaller.byteStringUnmarshaller.mapWithCharset { (data, charset) =>
+      Json.parse(data.utf8String).as[T]
+    }
+
+  implicit def playJsonMarshallerString[T: Writes]: Marshaller[T, String] =
+    Marshaller.withFixedCharset[T, String](MediaTypes.`application/json`, HttpCharsets.`UTF-8`) { c =>
+      Json.stringify(Json.toJson(c))
+    }
+
+  implicit def playJsonMarshallerEntity[T: Writes]: Marshaller[T, RequestEntity] =
+    Marshaller.withFixedCharset[T, RequestEntity](MediaTypes.`application/json`, HttpCharsets.`UTF-8`){c =>
+      HttpEntity(Json.stringify(Json.toJson(c)))
+    }
 }

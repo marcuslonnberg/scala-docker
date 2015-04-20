@@ -12,10 +12,12 @@ import org.apache.commons.codec.binary.Base64
 import org.json4s.JObject
 import org.json4s.native.Serialization._
 import org.reactivestreams.Publisher
+import play.api.libs.json.Json
 import se.marcuslonnberg.scaladocker.remote.models._
 
 import concurrent.duration.Duration
 import concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import se.marcuslonnberg.scaladocker.remote.models.playjson._
 
 object DockerClient {
   def apply()(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient = {
@@ -114,7 +116,7 @@ trait HostCommands extends DockerCommands {
 }
 
 trait AuthUtils {
-  this: JsonSupport =>
+  this: PlayJsonSupport =>
 
   private[api] def auths: Seq[RegistryAuth]
 
@@ -132,7 +134,7 @@ trait AuthUtils {
   private[api] def getAuthHeader(registry: Option[String]): Option[HttpHeader] = {
     getAuth(registry).map { auth =>
       val value = {
-        val json = write(auth.toConfig)
+        val json = Json.stringify(Json.toJson(auth.toConfig))
         Base64.encodeBase64String(json.getBytes("UTF-8"))
       }
       RawHeader("X-Registry-Auth", value)
@@ -169,11 +171,7 @@ trait ImageCommands extends DockerCommands with AuthUtils {
     Source(requestChunkedLines(HttpRequest(POST, uri, headers)))
       .filter(_.nonEmpty)
       .map { line =>
-      val obj = read[JObject](line)
-      val out: Option[CreateMessage] = obj.extractOpt[CreateMessages.Progress]
-        .orElse(obj.extractOpt[CreateMessages.ImageStatus])
-        .orElse(obj.extractOpt[CreateMessages.Status])
-        .orElse(obj.extractOpt[CreateMessages.Error])
+      val out: Option[CreateMessage] = ???
       out
     }.collect {
       case Some(v) => v

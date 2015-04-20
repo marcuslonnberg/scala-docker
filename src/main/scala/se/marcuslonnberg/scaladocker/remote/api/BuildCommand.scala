@@ -24,9 +24,7 @@ trait BuildCommand extends DockerCommands {
     Source(requestChunkedLines(request))
       .filter(_.nonEmpty)
       .map { line =>
-      val obj = read[JObject](line)
-      val maybeMessage: Option[BuildMessage] = obj.extractOpt[BuildMessages.Output]
-        .orElse(obj.extractOpt[BuildMessages.Error])
+      val maybeMessage: Option[BuildMessage] = ???
       maybeMessage
     }.collect {
       case Some(v) => v

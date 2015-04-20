@@ -47,6 +47,14 @@ package object playjson {
       })
   }
 
+  def nullableSeqFormat[T: Format] = Format[Seq[T]](
+    JsPath.readNullable[Seq[T]].map({ x =>
+      x.getOrElse(Seq.empty)
+    }), Writes { x =>
+      JsArray(x.map(Json.toJson(_)))
+    }
+  )
+
   implicit val imageIdFormat = Format[ImageId](
     JsPath.read[String].map(ImageId),
     Writes { imageId =>
@@ -114,6 +122,11 @@ package object playjson {
       JsArray(ports.map(Json.toJson(_)))
     }
   }
+
+  implicit def defaultMap[K, V](format: OFormat[Option[Map[K, V]]]): OFormat[Map[K, V]] =
+  format.inmap({ i =>
+    i.getOrElse(Map.empty)
+  }, {i => Some(i)})
 
   val portBindingsObjectFormat: Format[Map[Port, Seq[PortBinding]]] = {
     JsPath.format[Map[String, Seq[PortBinding]]].inmap[Map[Port, Seq[PortBinding]]](m => m.map {
@@ -301,7 +314,7 @@ package object playjson {
       (JsPath \ "IPPrefixLen").format[Int] and
       (JsPath \ "Gateway").format[String] and
       (JsPath \ "Bridge").format[String] and
-      (JsPath \ "Ports").format(portBindingsObjectFormat)
+      defaultMap((JsPath \ "Ports").formatNullable(portBindingsObjectFormat))
       )(NetworkSettings.apply, unlift(NetworkSettings.unapply))
 
   implicit val containerInfoFormat: Format[ContainerInfo] = {
@@ -340,4 +353,9 @@ package object playjson {
       (JsPath \ "HostConfig").format[HostConfig]
       )(ContainerInfo.apply, unlift(ContainerInfo.unapply))
   }
+
+  implicit val createContainerResponseJson =
+    ((JsPath \ "Id").format[ContainerHashId] and
+      (JsPath \ "Warnings").formatNullable[Seq[String]].inmap[Seq[String]](_.getOrElse(Seq.empty), Some(_))
+      )(CreateContainerResponse.apply, unlift(CreateContainerResponse.unapply))
 }

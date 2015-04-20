@@ -11,11 +11,12 @@ import akka.stream.scaladsl._
 import akka.stream.{FlattenStrategy, FlowMaterializer}
 import akka.util.Timeout
 import org.reactivestreams.Publisher
+import play.api.libs.json.Writes
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-trait DockerPipeline extends JsonSupport {
+trait DockerPipeline extends PlayJsonSupport {
   private[api] def baseUri: Uri
 
   private[api] def createUri(path: Path, query: Query): Uri = {
@@ -60,7 +61,7 @@ trait DockerPipeline extends JsonSupport {
   private[api] def sendAndUnmarshal[T](httpRequest: HttpRequest)
                                       (implicit system: ActorSystem,
                                        executionContext: ExecutionContext,
-                                       manifest: Manifest[T],
+                                       writer: Writes[T],
                                        unmarshaller: FromResponseUnmarshaller[T],
                                        materializer: FlowMaterializer): Future[T] = {
     sendRequest(httpRequest).flatMap { response =>
