@@ -36,7 +36,7 @@ object HostConfigSerializer extends CustomSerializer[HostConfig](implicit format
       dnsSearch = dnsSearch,
       volumesFrom = volumesFrom,
       devices = devices,
-      networkMode = networkMode,
+      networkMode = Option(networkMode),
       capAdd = capAdd,
       capDrop = capDrop,
       restartPolicy = restartPolicy)

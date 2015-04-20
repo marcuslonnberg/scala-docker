@@ -105,19 +105,19 @@ case class ContainerLink(containerName: String, aliasName: Option[String] = None
 }
 
 case class HostConfig(
-  binds: List[Volume] = List.empty,
-  lxcConf: List[String] = List.empty,
+  binds: Seq[Volume] = Seq.empty,
+  lxcConf: Seq[String] = Seq.empty,
   privileged: Boolean = false,
   portBindings: Map[Port, Seq[PortBinding]] = Map.empty,
-  links: List[ContainerLink] = List.empty,
+  links: Seq[ContainerLink] = Seq.empty,
   publishAllPorts: Boolean = false,
-  dns: List[String] = List.empty,
-  dnsSearch: List[String] = List.empty,
-  volumesFrom: List[String] = List.empty,
-  devices: List[DeviceMapping] = List.empty,
-  networkMode: String = "",
-  capAdd: List[String] = List.empty,
-  capDrop: List[String] = List.empty,
+  dns: Seq[String] = Seq.empty,
+  dnsSearch: Seq[String] = Seq.empty,
+  volumesFrom: Seq[String] = Seq.empty,
+  devices: Seq[DeviceMapping] = Seq.empty,
+  networkMode: Option[String] = None,
+  capAdd: Seq[String] = Seq.empty,
+  capDrop: Seq[String] = Seq.empty,
   restartPolicy: RestartPolicy = NeverRestart
 )
 
@@ -167,7 +167,7 @@ case class ContainerInfo(
   id: ContainerHashId,
   created: DateTime,
   path: String,
-  args: List[String],
+  args: Seq[String],
   config: ContainerConfig,
   state: ContainerState,
   image: String,
@@ -180,7 +180,7 @@ case class ContainerInfo(
   execDriver: String,
   mountLabel: Option[String] = None,
   processLabel: Option[String] = None,
-  volumes: List[Volume] = List.empty,
+  volumes: Seq[Volume] = Seq.empty,
   hostConfig: HostConfig
 )
 

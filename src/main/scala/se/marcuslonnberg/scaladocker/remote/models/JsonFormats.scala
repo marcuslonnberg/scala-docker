@@ -99,7 +99,7 @@ object JsonFormats {
     JObject(fields)
   }
 
-  def deserializeVolumes(volumesRaw: JObject, volumesRW: JObject): List[Volume] = {
+  def deserializeVolumes(volumesRaw: JObject, volumesRW: JObject): Seq[Volume] = {
     if (volumesRaw == null || volumesRW == null) List.empty
     else {
       volumesRaw.obj.map {
@@ -114,7 +114,7 @@ object JsonFormats {
     }
   }
 
-  def serializeVolumes(volumes: List[Volume]): (Map[String, String], Map[String, Boolean]) = {
+  def serializeVolumes(volumes: Seq[Volume]): (Map[String, String], Map[String, Boolean]) = {
     val (vol, volRw) = volumes.map { volume =>
       (volume.containerPath -> volume.hostPath,
         volume.containerPath -> volume.rw)

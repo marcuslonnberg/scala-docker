@@ -15,7 +15,7 @@ object ContainerInfoSerializer extends CustomSerializer[ContainerInfo](implicit 
       .getOrElse(extractField[ContainerHashId]("ID"))
     val created = extractField[DateTime]("Created")
     val path = extractField[String]("Path")
-    val args = extractField[List[String]]("Args")
+    val args = extractField[Seq[String]]("Args")
     val config = extractField[ContainerConfig]("Config")
     val state = extractField[ContainerState]("State")
     val image = extractField[String]("Image")
