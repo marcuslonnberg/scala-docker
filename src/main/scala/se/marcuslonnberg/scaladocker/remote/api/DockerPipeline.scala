@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.Http
 import akka.http.marshalling.Marshaller
 import akka.http.marshalling.Marshalling.WithFixedCharset
+import akka.http.model.HttpEntity.ChunkStreamPart
 import akka.http.model.Uri.{Path, Query}
 import akka.http.model._
 import akka.http.unmarshalling.FromResponseUnmarshaller
@@ -76,15 +77,16 @@ trait DockerPipeline extends PlayJsonSupport {
       .outgoingConnection(request.uri.authority.host.address(), request.uri.effectivePort)
 
     Source.single(request)
-      .via(connection.flow)
-      .runWith(HeadSink())
+      .via(connection)
+      .runWith(Sink.head[HttpResponse])
   }
 
-  private[api] def requestChunkedLines(httpRequest: HttpRequest)
-                                      (implicit system: ActorSystem, materializer: FlowMaterializer): Publisher[String] = {
+  private[api] def requestChunkedLines(
+    httpRequest: HttpRequest
+  )(implicit system: ActorSystem, materializer: FlowMaterializer): Publisher[String] = {
     val eventualResponse = sendRequest(httpRequest)
 
-    val responseToChunks: Flow[HttpResponse, Source[String]] = Flow[HttpResponse].map { response =>
+    val responseToChunks = Flow[HttpResponse].map { response =>
       response.entity match {
         case HttpEntity.Chunked(contentType, chunks) =>
           chunks.map(_.data().utf8String)
@@ -96,6 +98,6 @@ trait DockerPipeline extends PlayJsonSupport {
     Source(eventualResponse)
       .via(responseToChunks)
       .flatten(FlattenStrategy.concat)
-      .runWith(PublisherSink())
+      .runWith(Sink.publisher[String])
   }
 }

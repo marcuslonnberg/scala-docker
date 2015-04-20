@@ -2,7 +2,7 @@ import sbt._
 
 object Dependencies {
   val akkaVersion = "2.3.9"
-  val akkaHttpStreamsVersion = "1.0-M3"
+  val akkaHttpStreamsVersion = "1.0-M5"
 
   val akka = Seq(
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,

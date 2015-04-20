@@ -9,15 +9,13 @@ import akka.http.unmarshalling.{FromResponseUnmarshaller, PredefinedFromEntityUn
 import akka.stream._
 import akka.stream.scaladsl._
 import org.apache.commons.codec.binary.Base64
-import org.json4s.JObject
-import org.json4s.native.Serialization._
 import org.reactivestreams.Publisher
 import play.api.libs.json.Json
 import se.marcuslonnberg.scaladocker.remote.models._
-
-import concurrent.duration.Duration
-import concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import se.marcuslonnberg.scaladocker.remote.models.playjson._
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 object DockerClient {
   def apply()(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient = {
@@ -59,7 +57,7 @@ case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system:
       case _: ImageNotFoundException =>
         val create = images.create(containerConfig.image)
 
-        val eventualError = Source(create).collect { case e: CreateMessages.Error => e}.runWith(HeadSink[CreateMessages.Error]())
+        val eventualError = Source(create).collect { case e: CreateMessages.Error => e}.runWith(Sink.head[CreateMessages.Error])
         eventualError.map {
           case error =>
             throw new CreateImageException(containerConfig.image)
@@ -175,7 +173,7 @@ trait ImageCommands extends DockerCommands with AuthUtils {
       out
     }.collect {
       case Some(v) => v
-    }.runWith(PublisherSink())
+    }.runWith(Sink.publisher[CreateMessage])
   }
 
   def tag(from: ImageName, to: ImageName, force: Boolean = false): Future[Boolean] = {

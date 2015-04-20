@@ -4,11 +4,9 @@ import java.io._
 
 import akka.http.model.Uri.Path
 import akka.http.model._
-import akka.stream.scaladsl.{PublisherSink, Source}
-import org.json4s.JObject
-import org.json4s.native.Serialization._
+import akka.stream.scaladsl.{Sink, Source}
 import org.reactivestreams.Publisher
-import se.marcuslonnberg.scaladocker.remote.models.{BuildMessage, BuildMessages, ImageName}
+import se.marcuslonnberg.scaladocker.remote.models.{BuildMessage, ImageName}
 
 trait BuildCommand extends DockerCommands {
   def build(imageName: ImageName, tarFile: File, noCache: Boolean = false, rm: Boolean = true): Publisher[BuildMessage] = {
@@ -28,7 +26,7 @@ trait BuildCommand extends DockerCommands {
       maybeMessage
     }.collect {
       case Some(v) => v
-    }.runWith(PublisherSink())
+    }.runWith(Sink.publisher[BuildMessage])
   }
 
   private def readBytes(file: File): Array[Byte] = {
