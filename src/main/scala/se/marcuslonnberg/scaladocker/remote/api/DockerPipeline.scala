@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.http.Http
 import akka.http.marshalling.Marshaller
 import akka.http.marshalling.Marshalling.WithFixedCharset
-import akka.http.model.HttpEntity.ChunkStreamPart
 import akka.http.model.Uri.{Path, Query}
 import akka.http.model._
 import akka.http.unmarshalling.FromResponseUnmarshaller

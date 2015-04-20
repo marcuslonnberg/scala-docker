@@ -1,16 +1,13 @@
 package se.marcuslonnberg.scaladocker.remote.models
 
 import org.joda.time.DateTime
-import org.json4s.Extraction
-import org.json4s.native.Serialization._
 import org.scalatest.{FlatSpec, Matchers}
 import play.api.libs.json._
 import se.marcuslonnberg.scaladocker.remote.models.playjson._
+
 import scala.io.Source
 
 class JsonSpec extends FlatSpec with Matchers {
-
-  implicit val formats = JsonFormats()
 
   "ContainerInfo" should "be serializable and deserializable with JSON" in {
     val infoJson = readResourcePlay("container-info.json")
@@ -59,17 +56,6 @@ class JsonSpec extends FlatSpec with Matchers {
   def readResourcePlay(path: String) = {
     val rawString = Source.fromURL(getClass.getResource(path))
     Json.parse(rawString.mkString)
-  }
-
-  def readResource[T: Manifest](path: String): T = {
-    val rawString = Source.fromURL(getClass.getResource(path))
-    read[T](rawString.mkString)
-  }
-
-  def compare[T: Manifest](obj: T) {
-    val expected = Extraction.decompose(obj)
-    val value = Extraction.decompose(expected.extract[T])
-    value shouldEqual expected
   }
 
   def compareJson[T: Format](obj: JsValue) {
