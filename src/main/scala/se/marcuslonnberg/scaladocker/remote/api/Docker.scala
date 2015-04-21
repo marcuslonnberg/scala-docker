@@ -12,7 +12,7 @@ import org.apache.commons.codec.binary.Base64
 import org.reactivestreams.Publisher
 import play.api.libs.json.Json
 import se.marcuslonnberg.scaladocker.remote.models._
-import se.marcuslonnberg.scaladocker.remote.models.playjson._
+import se.marcuslonnberg.scaladocker.remote.models.json._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}

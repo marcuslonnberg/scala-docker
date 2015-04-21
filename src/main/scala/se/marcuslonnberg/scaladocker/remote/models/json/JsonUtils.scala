@@ -1,4 +1,4 @@
-package se.marcuslonnberg.scaladocker.remote.models.playjson
+package se.marcuslonnberg.scaladocker.remote.models.json
 
 import play.api.libs.functional.Functor
 import play.api.libs.json._

@@ -1,161 +1,14 @@
-package se.marcuslonnberg.scaladocker.remote.models
+package se.marcuslonnberg.scaladocker.remote.models.json
 
-import org.joda.time.DateTime
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatterBuilder, ISODateTimeFormat}
-import play.api.data.validation.ValidationError
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import se.marcuslonnberg.scaladocker.remote.models.playjson.JsonUtils._
+import se.marcuslonnberg.scaladocker.remote.models._
 
-import scala.util.Try
-
-package object playjson {
-  val dateTimeSecondsFormat = Format[DateTime](
-    JsPath.read[Long].map(seconds => new DateTime(seconds * 1000)),
-    Writes { dt =>
-      JsNumber(dt.getMillis / 1000)
-    }
-  )
-
-  val jodaTimeStringFormat: Format[DateTime] = {
-    val formatter = {
-      val parsers = Array(
-        ISODateTimeFormat.basicDateTime,
-        DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSZZ")
-      ).map(_.getParser)
-      new DateTimeFormatterBuilder().append(null, parsers).toFormatter
-    }
-
-    Format(
-      JsPath.read[String].map(x => formatter.parseDateTime(x)),
-      Writes { in =>
-        JsString(in.toString)
-      }
-    )
-  }
-
-  implicit val jodaTimeOptionalStringFormat: Format[Option[DateTime]] = {
-    val formatter = ISODateTimeFormat.basicDateTime
-
-    Format(
-      JsPath.format[String].map({
-        case "0001-01-01T00:00:00Z" => None
-        case input => Try(formatter.parseDateTime(input)).toOption
-      }), Writes { x =>
-        val v = x.map(_.toString).getOrElse("0001-01-01T00:00:00Z")
-        JsString(v)
-      })
-  }
-
-  def nullableSeqFormat[T: Format] = Format[Seq[T]](
-    JsPath.readNullable[Seq[T]].map({ x =>
-      x.getOrElse(Seq.empty)
-    }), Writes { x =>
-      JsArray(x.map(Json.toJson(_)))
-    }
-  )
-
-  implicit val imageIdFormat = Format[ImageId](
-    JsPath.read[String].map(ImageId),
-    Writes { imageId =>
-      JsString(imageId.hash)
-    }
-  )
-
-  implicit val containerHashIdFormat = Format[ContainerHashId](
-    JsPath.read[String].map(ContainerHashId),
-    Writes { containerHashId =>
-      JsString(containerHashId.hash)
-    }
-  )
-
-  implicit val imageNameFormat = Format[ImageName](
-    JsPath.read[String].map(ImageName.apply),
-    Writes { imageName =>
-      JsString(imageName.toString)
-    }
-  )
-
-  implicit val portFormat = Format[Port](
-    JsPath.read[String].collect(ValidationError("Bad port format")) {
-      case Port(port) => port
-    },
-    Writes { port =>
-      JsString(port.toString)
-    }
-  )
-
-  implicit val portBindingFormat: Format[PortBinding] =
-    ((JsPath \ "HostIp").format[String] and
-      (JsPath \ "HostPort").format[String].inmap[Int](_.toInt, _.toString)
-      )(PortBinding.apply, unlift(PortBinding.unapply))
-
-  case class JsonPort(PrivatePort: Int, Type: String, PublicPort: Option[Int], IP: Option[String])
-
-  implicit val jsonPortFormat = Json.format[JsonPort]
-
-  val portBindingsArrayFormat = new Format[Map[Port, Seq[PortBinding]]] {
-    override def reads(json: JsValue): JsResult[Map[Port, Seq[PortBinding]]] = {
-      json.validate[Seq[JsonPort]].map { ports =>
-        ports
-          .map(pb => Port(pb.PrivatePort, pb.Type) -> pb)
-          .collect {
-          case (Some(port: Port), JsonPort(_, _, Some(hostPort), Some(hostIp))) =>
-            port -> Some(PortBinding(hostIp, hostPort))
-          case (Some(port: Port), _) =>
-            port -> None
-        }.toMapGroup.map {
-          case (k, v) => k -> v.flatten
-        }
-      }
-    }
-
-    override def writes(o: Map[Port, Seq[PortBinding]]): JsValue = {
-      val ports = o.toSeq.map {
-        case (port, Nil) =>
-          Seq(JsonPort(port.port, port.protocol, None, None))
-        case (port, bindings) =>
-          bindings.map { binding =>
-            JsonPort(port.port, port.protocol, Some(binding.hostPort), Some(binding.hostIp))
-          }
-      }.flatten
-      JsArray(ports.map(Json.toJson(_)))
-    }
-  }
-
-  implicit def defaultMap[K, V](format: OFormat[Option[Map[K, V]]]): OFormat[Map[K, V]] =
-  format.inmap({ i =>
-    i.getOrElse(Map.empty)
-  }, {i => Some(i)})
-
-  val portBindingsObjectFormat: Format[Map[Port, Seq[PortBinding]]] = {
-    JsPath.format[Map[String, Seq[PortBinding]]].inmap[Map[Port, Seq[PortBinding]]](m => m.map {
-      case (Port(port), bindings) => port -> bindings
-    }, m => m.map {
-      case (port, bindings) => port.toString -> bindings
-    })
-  }
-
-  implicit val portBindingsEmptyObjectFormat = Format[Seq[Port]](Reads { in =>
-    in.validate[JsObject].map { obj =>
-      obj.fields.map {
-        case (Port(port), _) => port
-      }
-    }
-  }, Writes { in =>
-    val fields = in.map(port => port.toString -> JsObject(Seq.empty))
-    JsObject(fields)
-  })
-
+trait ContainerFormats extends CommonFormats {
   implicit val containerStatusFormat = {
     implicit val a = portBindingsArrayFormat
     implicit val b = dateTimeSecondsFormat
     JsonUtils.upperCamelCase(Json.format[ContainerStatus])
-  }
-
-  implicit val imageFormat = {
-    implicit val a = dateTimeSecondsFormat
-    JsonUtils.upperCamelCase(Json.format[Image])
   }
 
   implicit val volumeBindingFormat = Format[Volume](Reads { in =>
@@ -170,8 +23,8 @@ package object playjson {
       }
     }
   }, Writes { volume =>
-    val rwSeq = if (volume.rw) Seq.empty else Seq("ro")
-    JsString((Seq(volume.hostPath, volume.containerPath) ++ rwSeq).mkString(":"))
+    val maybeRw = if (volume.rw) None else Some("ro")
+    JsString((volume.hostPath :: volume.containerPath :: maybeRw.toList).mkString(":"))
   })
 
   implicit val containerConfigFormat = Format[ContainerConfig](
@@ -197,7 +50,11 @@ package object playjson {
         (JsPath \ "Tty").read[Boolean] and
         (JsPath \ "OpenStdin").read[Boolean] and
         (JsPath \ "OnBuild").readNullable[Seq[String]].map(_.getOrElse(Seq.empty))
-        ) { (image: ImageName, hostname: Option[String], domainName: Option[String], user: Option[String], memory: Long, memorySwap: Long, cpuShares: Long, cpuset: Option[String], attachStdin: Boolean, attachStdout: Boolean, attachStderr: Boolean, exposedPorts: Seq[Port], env: Seq[String], cmd: Seq[String], volumes: Seq[String], workingDir: Option[String], entryPoint: Seq[String], networkDisabled: Boolean, tty: Boolean, openStdin: Boolean, onBuild: Seq[String]) =>
+        ) { (image: ImageName, hostname: Option[String], domainName: Option[String], user: Option[String], memory: Long,
+      memorySwap: Long, cpuShares: Long, cpuset: Option[String], attachStdin: Boolean, attachStdout: Boolean,
+      attachStderr: Boolean, exposedPorts: Seq[Port], env: Seq[String], cmd: Seq[String], volumes: Seq[String],
+      workingDir: Option[String], entryPoint: Seq[String], networkDisabled: Boolean, tty: Boolean, openStdin: Boolean,
+      onBuild: Seq[String]) =>
 
         val stdinOnce = (in \ "stdinOnce").asOpt[Boolean].getOrElse(false)
         ContainerConfig(
@@ -353,9 +210,4 @@ package object playjson {
       (JsPath \ "HostConfig").format[HostConfig]
       )(ContainerInfo.apply, unlift(ContainerInfo.unapply))
   }
-
-  implicit val createContainerResponseJson =
-    ((JsPath \ "Id").format[ContainerHashId] and
-      (JsPath \ "Warnings").formatNullable[Seq[String]].inmap[Seq[String]](_.getOrElse(Seq.empty), Some(_))
-      )(CreateContainerResponse.apply, unlift(CreateContainerResponse.unapply))
 }

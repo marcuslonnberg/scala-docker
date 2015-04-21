@@ -3,7 +3,7 @@ package se.marcuslonnberg.scaladocker.remote.models
 import org.joda.time.DateTime
 import org.scalatest.{FlatSpec, Matchers}
 import play.api.libs.json._
-import se.marcuslonnberg.scaladocker.remote.models.playjson._
+import se.marcuslonnberg.scaladocker.remote.models.json._
 
 import scala.io.Source
 
