@@ -11,7 +11,7 @@ case class ImageNotFoundException(imageName: String) extends DockerApiException(
 
 case class UnknownResponseException(statusCode: StatusCode, entity: String) extends DockerApiException(s"Got unknown status: $statusCode, with entity: $entity")
 
-case class ServerErrorException(statusCode: StatusCode, detailMessage: String) extends DockerApiException(s"Server error ($statusCode}): $detailMessage")
+case class ServerErrorException(statusCode: StatusCode, detailMessage: String) extends DockerApiException(s"Server error ($statusCode): $detailMessage")
 
 case class BadRequestException(detailMessage: String) extends DockerApiException(detailMessage)
 

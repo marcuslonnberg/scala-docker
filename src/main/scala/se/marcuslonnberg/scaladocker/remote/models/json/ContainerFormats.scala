@@ -28,87 +28,38 @@ trait ContainerFormats extends CommonFormats {
     JsString((volume.hostPath :: volume.containerPath :: maybeRw.toList).mkString(":"))
   })
 
-  implicit val containerConfigFormat = Format[ContainerConfig](
-    Reads { in =>
-      ((JsPath \ "Image").read[ImageName] and
-        (JsPath \ "Hostname").readNullable[String] and
-        (JsPath \ "DomainName").readNullable[String] and
-        (JsPath \ "User").readNullable[String] and
-        (JsPath \ "Memory").read[Long] and
-        (JsPath \ "MemorySwap").read[Long] and
-        (JsPath \ "CpuShares").read[Long] and
-        (JsPath \ "Cpuset").readNullable[String] and
-        (JsPath \ "AttachStdin").read[Boolean] and
-        (JsPath \ "AttachStdout").read[Boolean] and
-        (JsPath \ "AttachStderr").read[Boolean] and
+  implicit val standardStreamsConfigFormat: OFormat[StandardStreamsConfig] =
+    ((JsPath \ "AttachStdin").formatWithDefault[Boolean](false) and
+      (JsPath \ "AttachStdout").formatWithDefault[Boolean](false) and
+      (JsPath \ "AttachStderr").formatWithDefault[Boolean](false) and
+      (JsPath \ "Tty").formatWithDefault[Boolean](false) and
+      (JsPath \ "OpenStdin").formatWithDefault[Boolean](false) and
+      (JsPath \ "StdinOnce").formatWithDefault[Boolean](false)
+      )(StandardStreamsConfig.apply, unlift(StandardStreamsConfig.unapply))
+
+  implicit val containerResourceLimitsFormat: OFormat[ContainerResourceLimits] =
+    ((JsPath \ "Memory").formatWithDefault[Long](0) and
+      (JsPath \ "MemorySwap").formatWithDefault[Long](0) and
+      (JsPath \ "CpuShares").formatWithDefault[Long](0) and
+      (JsPath \ "Cpuset").formatNullable[String]
+      )(ContainerResourceLimits.apply, unlift(ContainerResourceLimits.unapply))
+
+  implicit val containerConfigFormat: Format[ContainerConfig] =
+      ((JsPath \ "Image").format[ImageName] and
+        (JsPath \ "Hostname").formatNullable[String] and
+        (JsPath \ "DomainName").formatNullable[String] and
+        (JsPath \ "User").formatNullable[String] and
+        containerResourceLimitsFormat and
+        standardStreamsConfigFormat and
         (JsPath \ "ExposedPorts").formatWithDefault[Seq[Port]](Seq.empty) and
         (JsPath \ "Env").formatWithDefault[Seq[String]](Seq.empty) and
         (JsPath \ "Cmd").formatWithDefault[Seq[String]](Seq.empty) and
         (JsPath \ "Volumes").formatWithDefault[Seq[String]](Seq.empty) and
-        (JsPath \ "WorkingDir").readNullable[String] and
-        (JsPath \ "Entrypoint").formatWithDefault[Seq[String]](Seq.empty) and
-        (JsPath \ "NetworkDisabled").read[Boolean] and
-        (JsPath \ "Tty").read[Boolean] and
-        (JsPath \ "OpenStdin").read[Boolean] and
+        (JsPath \ "WorkingDir").formatNullable[String] and
+        (JsPath \ "Entrypoint").formatNullable[Seq[String]] and
+        (JsPath \ "NetworkDisabled").formatWithDefault[Boolean](false) and
         (JsPath \ "OnBuild").formatWithDefault[Seq[String]](Seq.empty)
-        ) { (image: ImageName, hostname: Option[String], domainName: Option[String], user: Option[String], memory: Long,
-      memorySwap: Long, cpuShares: Long, cpuset: Option[String], attachStdin: Boolean, attachStdout: Boolean,
-      attachStderr: Boolean, exposedPorts: Seq[Port], env: Seq[String], cmd: Seq[String], volumes: Seq[String],
-      workingDir: Option[String], entryPoint: Seq[String], networkDisabled: Boolean, tty: Boolean, openStdin: Boolean,
-      onBuild: Seq[String]) =>
-
-        val stdinOnce = (in \ "stdinOnce").asOpt[Boolean].getOrElse(false)
-        ContainerConfig(
-          image = image,
-          hostname = hostname,
-          domainName = domainName,
-          user = user,
-          memory = memory,
-          memorySwap = memorySwap,
-          cpuShares = cpuShares,
-          cpuset = cpuset,
-          attachStdin = attachStdin,
-          attachStdout = attachStdout,
-          attachStderr = attachStderr,
-          exposedPorts = exposedPorts,
-          tty = tty,
-          openStdin = openStdin,
-          stdinOnce = stdinOnce,
-          env = env,
-          cmd = cmd,
-          volumes = volumes,
-          workingDir = workingDir,
-          entryPoint = entryPoint,
-          networkDisabled = networkDisabled,
-          onBuild = onBuild
-        )
-      }.reads(in)
-    }, Writes[ContainerConfig] { cc =>
-      Json.obj(
-        "Image" -> cc.image,
-        "Hostname" -> cc.hostname,
-        "DomainName" -> cc.domainName,
-        "User" -> cc.user,
-        "Memory" -> cc.memory,
-        "MemorySwap" -> cc.memorySwap,
-        "CpuShares" -> cc.cpuShares,
-        "Cpuset" -> cc.cpuset,
-        "AttachStdin" -> cc.attachStdin,
-        "AttachStdout" -> cc.attachStdout,
-        "AttachStderr" -> cc.attachStderr,
-        "ExposedPorts" -> cc.exposedPorts,
-        "Tty" -> cc.tty,
-        "OpenStdin" -> cc.openStdin,
-        "StdinOnce" -> cc.stdinOnce,
-        "Env" -> cc.env,
-        "Cmd" -> cc.cmd,
-        "Volumes" -> cc.volumes,
-        "WorkingDir" -> cc.workingDir,
-        "Entrypoint" -> cc.entryPoint,
-        "NetworkDisabled" -> cc.networkDisabled,
-        "OnBuild" -> cc.onBuild
-      )
-    })
+        )(ContainerConfig.apply, unlift(ContainerConfig.unapply))
 
   implicit val restartPolicyFormat = Format[RestartPolicy](Reads { in =>
     (JsPath \ "Name").read[String].reads(in).flatMap {
@@ -142,20 +93,20 @@ trait ContainerFormats extends CommonFormats {
 
   implicit val hostConfigFormat: Format[HostConfig] =
     ((JsPath \ "Binds").formatWithDefault[Seq[Volume]](Seq.empty) and
-    (JsPath \ "LxcConf").formatWithDefault[Seq[String]](Seq.empty) and
-    (JsPath \ "Privileged").formatWithDefault[Boolean](false) and
-    (JsPath \ "PortBindings").formatWithDefault[Map[Port, Seq[PortBinding]]](Map.empty)(portBindingsObjectFormat) and
-    (JsPath \ "Links").formatWithDefault[Seq[ContainerLink]](Seq.empty) and
-    (JsPath \ "PublishAllPorts").formatWithDefault[Boolean](false) and
-    (JsPath \ "Dns").formatWithDefault[Seq[String]](Seq.empty) and
-    (JsPath \ "DnsSearch").formatWithDefault[Seq[String]](Seq.empty) and
-    (JsPath \ "VolumesFrom").formatWithDefault[Seq[String]](Seq.empty) and
-    (JsPath \ "Devices").formatWithDefault[Seq[DeviceMapping]](Seq.empty) and
-    (JsPath \ "NetworkMode").formatNullable[String].inmap[Option[String]](_.filter(_.nonEmpty), identity) and
-    (JsPath \ "CapAdd").formatWithDefault[Seq[String]](Seq.empty) and
-    (JsPath \ "CapDrop").formatWithDefault[Seq[String]](Seq.empty) and
-    (JsPath \ "RestartPolicy").formatWithDefault[RestartPolicy](NeverRestart)
-    )(HostConfig.apply, unlift(HostConfig.unapply))
+      (JsPath \ "LxcConf").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "Privileged").formatWithDefault[Boolean](false) and
+      (JsPath \ "PortBindings").formatNullable[Map[Port, Seq[PortBinding]]](portBindingsObjectFormat) and
+      (JsPath \ "Links").formatWithDefault[Seq[ContainerLink]](Seq.empty) and
+      (JsPath \ "PublishAllPorts").formatWithDefault[Boolean](false) and
+      (JsPath \ "Dns").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "DnsSearch").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "VolumesFrom").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "Devices").formatWithDefault[Seq[DeviceMapping]](Seq.empty) and
+      (JsPath \ "NetworkMode").formatNullable[String].inmap[Option[String]](_.filter(_.nonEmpty), identity) and
+      (JsPath \ "CapAdd").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "CapDrop").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "RestartPolicy").formatWithDefault[RestartPolicy](NeverRestart)
+      )(HostConfig.apply, unlift(HostConfig.unapply))
 
   implicit val containerStateFormat: Format[ContainerState] = {
     ((JsPath \ "Running").format[Boolean] and

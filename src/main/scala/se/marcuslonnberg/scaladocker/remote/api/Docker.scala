@@ -254,6 +254,10 @@ trait ContainerCommands extends DockerCommands {
           unmarshaller(response)
         case StatusCodes.NotFound =>
           Future.failed(ImageNotFoundException(config.image.toString))
+        case StatusCodes.InternalServerError =>
+          entityAsString(response).map { entity =>
+            throw ServerErrorException(response.status, entity)
+          }
         case _ =>
           unknownResponse(response)
       }

@@ -60,34 +60,61 @@ object Port {
 case class PortBinding(hostIp: String, hostPort: Int)
 
 /**
- * @param memory Memory limit, in bytes.
- * @param memorySwap Total memory usage (memory + swap). Set `-1` to disable swap.
- * @param cpuShares CPU shares (relative weight vs. other containers)
- * @param cpuset Cpuset, examples: `"0-2"`, `"0,1"`
+ * Configuration for a container.
+ *
+ * @param image Image to run.
+ * @param hostname Container hostname.
+ * @param user Username or UID.
  */
 case class ContainerConfig(
   image: ImageName,
   hostname: Option[String] = None,
   domainName: Option[String] = None,
   user: Option[String] = None,
-  memory: Long = 0,
-  memorySwap: Long = 0,
-  cpuShares: Long = 0,
-  cpuset: Option[String] = None,
-  attachStdin: Boolean = false,
-  attachStdout: Boolean = false,
-  attachStderr: Boolean = false,
+  resourceLimits: ContainerResourceLimits = ContainerResourceLimits(),
+  standardStreams: StandardStreamsConfig = StandardStreamsConfig(),
   exposedPorts: Seq[Port] = Seq.empty,
-  tty: Boolean = false,
-  openStdin: Boolean = false,
-  stdinOnce: Boolean = false,
   env: Seq[String] = Seq.empty,
   cmd: Seq[String] = Seq.empty,
   volumes: Seq[String] = Seq.empty,
   workingDir: Option[String] = None,
-  entryPoint: Seq[String] = Seq.empty,
+  entryPoint: Option[Seq[String]] = None,
   networkDisabled: Boolean = false,
   onBuild: Seq[String] = Seq.empty
+)
+
+/**
+ * Configuration options for standard streams.
+ *
+ * @param attachStdIn Attach to standard input.
+ * @param attachStdOut Attach to standard output.
+ * @param attachStdErr Attach to standard error.
+ * @param tty Allocate a pseudo-TTY.
+ * @param openStdin Keep stdin open even if not attached.
+ * @param stdinOnce Close stdin when one attached client disconnects.
+ */
+case class StandardStreamsConfig(
+  attachStdIn: Boolean = false,
+  attachStdOut: Boolean = false,
+  attachStdErr: Boolean = false,
+  tty: Boolean = false,
+  openStdin: Boolean = false,
+  stdinOnce: Boolean = false
+)
+
+/**
+ * Resource limitations on a container.
+ *
+ * @param memory Memory limit, in bytes.
+ * @param memorySwap Total memory limit (memory + swap), in bytes. Set `-1` to disable swap.
+ * @param cpuShares CPU shares (relative weight vs. other containers)
+ * @param cpuset CPUs in which to allow execution, examples: `"0-2"`, `"0,1"`.
+ */
+case class ContainerResourceLimits(
+  memory: Long = 0,
+  memorySwap: Long = 0,
+  cpuShares: Long = 0,
+  cpuset: Option[String] = None
 )
 
 object ContainerLink {
@@ -108,7 +135,7 @@ case class HostConfig(
   binds: Seq[Volume] = Seq.empty,
   lxcConf: Seq[String] = Seq.empty,
   privileged: Boolean = false,
-  portBindings: Map[Port, Seq[PortBinding]] = Map.empty,
+  portBindings: Option[Map[Port, Seq[PortBinding]]] = None,
   links: Seq[ContainerLink] = Seq.empty,
   publishAllPorts: Boolean = false,
   dns: Seq[String] = Seq.empty,
