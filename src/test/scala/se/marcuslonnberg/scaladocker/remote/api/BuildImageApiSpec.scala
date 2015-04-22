@@ -17,7 +17,7 @@ class BuildImageApiSpec extends TestKit(ActorSystem("build-image-api")) with Fla
 
   val imageName = ImageName("scaladocker/image-build")
 
-  "Build image API" should "run commands from the Dockerfile in the root of the tar archive" ignore {
+  "Build image API" should "run commands from the Dockerfile in the root of the tar archive" in {
     val tarArchive = TarArchive(
       inDir = new File(getClass.getResource("simple-build-image").getFile),
       out = File.createTempFile("simple-build-image", ".tar"))

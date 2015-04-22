@@ -33,7 +33,7 @@ object DockerClient {
 case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system: ActorSystem, materializer: FlowMaterializer) {
   val containers: ContainerCommands = new ContainerCommands with Context
   val host: HostCommands = new HostCommands with Context
-  val images: ImageCommands = new ImageCommands with BuildCommand with Context {
+  val images: ImageCommands with BuildCommand = new ImageCommands with BuildCommand with Context {
     override private[api] def auths = DockerClient.this.auths
   }
 
@@ -169,14 +169,8 @@ trait ImageCommands extends DockerCommands with AuthUtils {
 
     val headers = getAuthHeader(imageName.registry).toList
 
-    Source(requestChunkedLines(HttpRequest(POST, uri, headers)))
-      .filter(_.nonEmpty)
-      .map { line =>
-      val out: Option[CreateImageMessage] = ???
-      out
-    }.collect {
-      case Some(v) => v
-    }.runWith(Sink.publisher[CreateImageMessage])
+    Source(requestChunkedLinesJson[CreateImageMessage](HttpRequest(POST, uri, headers)))
+      .runWith(Sink.publisher[CreateImageMessage])
   }
 
   def tag(from: ImageName, to: ImageName, force: Boolean = false): Future[Boolean] = {

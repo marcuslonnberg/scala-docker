@@ -11,7 +11,7 @@ import akka.stream.scaladsl._
 import akka.stream.{FlattenStrategy, FlowMaterializer}
 import akka.util.Timeout
 import org.reactivestreams.Publisher
-import play.api.libs.json.Writes
+import play.api.libs.json._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -113,5 +113,35 @@ trait DockerPipeline extends PlayJsonSupport {
       .via(responseToChunks)
       .flatten(FlattenStrategy.concat)
       .runWith(Sink.publisher[String])
+  }
+
+  private[api] def requestChunkedLinesJson[T](
+    httpRequest: HttpRequest
+  )(implicit system: ActorSystem,
+    materializer: FlowMaterializer,
+    reader: Reads[T]
+  ): Publisher[T] = {
+    val eventualResponse = sendRequest(httpRequest)
+
+    val responseToChunks = Flow[HttpResponse].map { response =>
+      response.entity match {
+        case HttpEntity.Chunked(contentType, chunks) =>
+          if (contentType.mediaType == MediaTypes.`application/json`) {
+            chunks.map { chunk =>
+              val str = chunk.data().utf8String
+              Json.parse(str).as[T]
+            }
+          } else {
+            throw new RuntimeException(s"Expected application/json as content type but got $contentType on request to: ${httpRequest.uri}")
+          }
+
+        // TODO handle other entities
+      }
+    }
+
+    Source(eventualResponse)
+      .via(responseToChunks)
+      .flatten(FlattenStrategy.concat)
+      .runWith(Sink.publisher[T])
   }
 }

@@ -7,6 +7,7 @@ import akka.http.model._
 import akka.stream.scaladsl.{Sink, Source}
 import org.reactivestreams.Publisher
 import se.marcuslonnberg.scaladocker.remote.models.{BuildMessage, ImageName}
+import se.marcuslonnberg.scaladocker.remote.models.json._
 
 trait BuildCommand extends DockerCommands {
   def build(imageName: ImageName, tarFile: File, noCache: Boolean = false, rm: Boolean = true): Publisher[BuildMessage] = {
@@ -19,14 +20,8 @@ trait BuildCommand extends DockerCommands {
     val entity = HttpEntity(ContentType(MediaType.custom("application/tar")), readBytes(tarFile))
     val request = HttpRequest(HttpMethods.POST, uri, entity = entity)
 
-    Source(requestChunkedLines(request))
-      .filter(_.nonEmpty)
-      .map { line =>
-      val maybeMessage: Option[BuildMessage] = ???
-      maybeMessage
-    }.collect {
-      case Some(v) => v
-    }.runWith(Sink.publisher[BuildMessage])
+    Source(requestChunkedLinesJson[BuildMessage](request))
+      .runWith(Sink.publisher[BuildMessage])
   }
 
   private def readBytes(file: File): Array[Byte] = {
