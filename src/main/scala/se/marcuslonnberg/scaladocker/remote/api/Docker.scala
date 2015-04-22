@@ -31,33 +31,34 @@ object DockerClient {
 }
 
 case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system: ActorSystem, materializer: FlowMaterializer) {
-  val containers = new ContainerCommands with Context
-  val host = new HostCommands with Context
-  val images = new ImageCommands with BuildCommand with Context {
+  val containers: ContainerCommands = new ContainerCommands with Context
+  val host: HostCommands = new HostCommands with Context
+  val images: ImageCommands = new ImageCommands with BuildCommand with Context {
     override private[api] def auths = DockerClient.this.auths
   }
 
   trait Context {
     this: DockerCommands =>
-    override def baseUri = DockerClient.this.baseUri
+    private[api] override def baseUri = DockerClient.this.baseUri
 
-    implicit def system: ActorSystem = DockerClient.this.system
+    private[api] implicit def system: ActorSystem = DockerClient.this.system
 
-    implicit def materializer: FlowMaterializer = DockerClient.this.materializer
+    private[api] implicit def materializer: FlowMaterializer = DockerClient.this.materializer
 
-    implicit def dispatcher: ExecutionContextExecutor = system.dispatcher
+    private[api] implicit def dispatcher: ExecutionContextExecutor = system.dispatcher
   }
 
   import system.dispatcher
 
   def run(containerConfig: ContainerConfig,
-          hostConfig: HostConfig,
-          name: Option[ContainerName] = None)(implicit materializer: FlowMaterializer): Future[ContainerId] = {
+    hostConfig: HostConfig,
+    name: Option[ContainerName] = None
+  )(implicit materializer: FlowMaterializer): Future[ContainerId] = {
     runLocal(containerConfig, hostConfig, name).recoverWith {
       case _: ImageNotFoundException =>
         val create = images.create(containerConfig.image)
 
-        val eventualError = Source(create).collect { case e: CreateMessages.Error => e}.runWith(Sink.head[CreateMessages.Error])
+        val eventualError = Source(create).collect { case e: CreateMessages.Error => e }.runWith(Sink.head[CreateMessages.Error])
         eventualError.map {
           case error =>
             throw new CreateImageException(containerConfig.image)
@@ -68,9 +69,11 @@ case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system:
     }
   }
 
-  def runLocal(containerConfig: ContainerConfig,
-               hostConfig: HostConfig,
-               name: Option[ContainerName] = None): Future[ContainerId] = {
+  def runLocal(
+    containerConfig: ContainerConfig,
+    hostConfig: HostConfig,
+    name: Option[ContainerName] = None
+  ): Future[ContainerId] = {
     containers.create(containerConfig, name).flatMap { response =>
       containers.start(response.id, hostConfig)
     }
@@ -80,11 +83,11 @@ case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system:
 }
 
 trait DockerCommands extends DockerPipeline {
-  implicit def system: ActorSystem
+  private[api] implicit def system: ActorSystem
 
-  implicit def materializer: FlowMaterializer
+  private[api] implicit def materializer: FlowMaterializer
 
-  implicit def dispatcher: ExecutionContext
+  private[api] implicit def dispatcher: ExecutionContext
 
   private[api] def entityAsString(response: HttpResponse): Future[String] = {
     val unmarshaller = PredefinedFromEntityUnmarshallers.stringUnmarshaller
@@ -267,14 +270,21 @@ trait ContainerCommands extends DockerCommands {
     sendPostRequest(Path / "containers" / id.value / "start", content = config).flatMap(containerResponse(id))
   }
 
-  def stop(id: ContainerId, maxWaitTime: Option[Duration] = None): Future[ContainerId] = {
+  def stop(
+    id: ContainerId,
+    maxWaitTime: Option[Duration] = None
+  ): Future[ContainerId] = {
     val uri = baseUri
       .withPath(Path / "containers" / id.value / "stop")
       .withQuery("t" -> maxWaitTime.fold(Query.EmptyValue)(_.toSeconds.toString))
     sendRequest(HttpRequest(POST, uri)).flatMap(containerResponse(id))
   }
 
-  def delete(id: ContainerId, removeVolumes: Option[Boolean] = None, force: Option[Boolean] = None): Future[ContainerId] = {
+  def delete(
+    id: ContainerId,
+    removeVolumes: Option[Boolean] = None,
+    force: Option[Boolean] = None
+  ): Future[ContainerId] = {
     val uri = baseUri
       .withPath(Path / "containers" / id.value)
       .withQuery(
@@ -283,7 +293,13 @@ trait ContainerCommands extends DockerCommands {
     sendRequest(HttpRequest(DELETE, uri)) flatMap containerResponse(id)
   }
 
-  def logs(id: ContainerId, follow: Boolean = false, stdout: Boolean = true, stderr: Boolean = false, timestamps: Boolean = false): Publisher[String] = {
+  def logs(
+    id: ContainerId,
+    follow: Boolean = false,
+    stdout: Boolean = true,
+    stderr: Boolean = false,
+    timestamps: Boolean = false
+  ): Publisher[String] = {
     val uri = baseUri
       .withPath(Path / "containers" / id.value / "logs")
       .withQuery(

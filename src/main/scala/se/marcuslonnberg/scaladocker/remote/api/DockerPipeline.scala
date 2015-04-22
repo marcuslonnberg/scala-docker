@@ -23,20 +23,25 @@ trait DockerPipeline extends PlayJsonSupport {
     baseUri.withPath(baseUri.path ++ path).withQuery(query)
   }
 
-  private[api] def sendGetRequest(path: Uri.Path, query: Uri.Query = Uri.Query.Empty)
-                                 (implicit system: ActorSystem,
-                                  executionContext: ExecutionContext,
-                                  materializer: FlowMaterializer): Future[HttpResponse] = {
+  private[api] def sendGetRequest(
+    path: Uri.Path,
+    query: Uri.Query = Uri.Query.Empty
+  )(implicit system: ActorSystem,
+    executionContext: ExecutionContext,
+    materializer: FlowMaterializer
+  ): Future[HttpResponse] = {
     val uri = createUri(path, query)
     sendRequest(HttpRequest(HttpMethods.GET, uri))
   }
 
-  private[api] def sendPostRequest[F, T](path: Uri.Path,
-                                         query: Uri.Query = Uri.Query.Empty,
-                                         content: F)
-                                        (implicit system: ActorSystem,
-                                         marshaller: Marshaller[F, RequestEntity],
-                                         materializer: FlowMaterializer): Future[HttpResponse] = {
+  private[api] def sendPostRequest[F, T](
+    path: Uri.Path,
+    query: Uri.Query = Uri.Query.Empty,
+    content: F
+  )(implicit system: ActorSystem,
+    marshaller: Marshaller[F, RequestEntity],
+    materializer: FlowMaterializer
+  ): Future[HttpResponse] = {
     import system.dispatcher
     val uri = createUri(path, query)
     val eventualEntity = createEntity(content)
@@ -46,8 +51,11 @@ trait DockerPipeline extends PlayJsonSupport {
     }
   }
 
-  private[api] def createEntity[T, F](content: F)(implicit executionContext: ExecutionContext,
-                                                  marshaller: Marshaller[F, RequestEntity]): Future[RequestEntity] = {
+  private[api] def createEntity[T, F](
+    content: F
+  )(implicit executionContext: ExecutionContext,
+    marshaller: Marshaller[F, RequestEntity]
+  ): Future[RequestEntity] = {
     marshaller(content).map { xs =>
       xs.head match {
         case marshalling: WithFixedCharset[RequestEntity] =>
@@ -58,20 +66,25 @@ trait DockerPipeline extends PlayJsonSupport {
     }
   }
 
-  private[api] def sendAndUnmarshal[T](httpRequest: HttpRequest)
-                                      (implicit system: ActorSystem,
-                                       executionContext: ExecutionContext,
-                                       writer: Writes[T],
-                                       unmarshaller: FromResponseUnmarshaller[T],
-                                       materializer: FlowMaterializer): Future[T] = {
+  private[api] def sendAndUnmarshal[T](
+    httpRequest: HttpRequest
+  )(implicit system: ActorSystem,
+    executionContext: ExecutionContext,
+    writer: Writes[T],
+    unmarshaller: FromResponseUnmarshaller[T],
+    materializer: FlowMaterializer
+  ): Future[T] = {
     sendRequest(httpRequest).flatMap { response =>
       unmarshaller(response)
     }
   }
 
-  private[api] def sendRequest(request: HttpRequest)
-                              (implicit system: ActorSystem, materializer: FlowMaterializer,
-                               timeout: Timeout = Timeout(30.seconds)): Future[HttpResponse] = {
+  private[api] def sendRequest(
+    request: HttpRequest
+  )(implicit system: ActorSystem,
+    materializer: FlowMaterializer,
+    timeout: Timeout = Timeout(30.seconds)
+  ): Future[HttpResponse] = {
     val connection = Http(system)
       .outgoingConnection(request.uri.authority.host.address(), request.uri.effectivePort)
 
@@ -82,7 +95,9 @@ trait DockerPipeline extends PlayJsonSupport {
 
   private[api] def requestChunkedLines(
     httpRequest: HttpRequest
-  )(implicit system: ActorSystem, materializer: FlowMaterializer): Publisher[String] = {
+  )(implicit system: ActorSystem,
+    materializer: FlowMaterializer
+  ): Publisher[String] = {
     val eventualResponse = sendRequest(httpRequest)
 
     val responseToChunks = Flow[HttpResponse].map { response =>
