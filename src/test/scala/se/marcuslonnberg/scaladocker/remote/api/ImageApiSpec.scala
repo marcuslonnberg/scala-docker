@@ -1,11 +1,12 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
+import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorFlowMaterializer, ActorFlowMaterializerSettings}
 import akka.testkit.TestKit
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
-import se.marcuslonnberg.scaladocker.remote.models.ImageName
+import se.marcuslonnberg.scaladocker.remote.models.{CreateImageMessages, ImageName}
 
 class ImageApiSpec extends TestKit(ActorSystem("image-api")) with FlatSpecLike with Matchers with ScalaFutures with BeforeAndAfterAll with IntegrationPatience {
   implicit val mat = ActorFlowMaterializer(ActorFlowMaterializerSettings(system))
@@ -34,7 +35,15 @@ class ImageApiSpec extends TestKit(ActorSystem("image-api")) with FlatSpecLike w
 
   it should "create (pull) an image" in {
     pending
-    client.images.create(ImageName("busybox"))
+    val imageName = ImageName("busybox:latest")
+    val createStream = client.images.create(imageName)
+    val future = Source(createStream).collect {
+      case CreateImageMessages.Status(s)
+        if s == s"Status: Downloaded newer image for $imageName" ||
+          s == s"Status: Image is up to date for $imageName" => true
+    }.runWith(Sink.head)
+
+    future.futureValue shouldEqual true
   }
 
   it should "tag an image" in {
