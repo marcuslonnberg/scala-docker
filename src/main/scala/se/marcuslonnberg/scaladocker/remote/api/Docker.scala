@@ -58,7 +58,7 @@ case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system:
       case _: ImageNotFoundException =>
         val create = images.create(containerConfig.image)
 
-        val eventualError = Source(create).collect { case e: CreateMessages.Error => e }.runWith(Sink.head[CreateMessages.Error])
+        val eventualError = Source(create).collect { case e: CreateImageMessages.Error => e }.runWith(Sink.head[CreateImageMessages.Error])
         eventualError.map {
           case error =>
             throw new CreateImageException(containerConfig.image)
@@ -160,7 +160,7 @@ trait ImageCommands extends DockerCommands with AuthUtils {
     }
   }
 
-  def create(imageName: ImageName): Publisher[CreateMessage] = {
+  def create(imageName: ImageName): Publisher[CreateImageMessage] = {
     val parameters = Map("fromImage" -> imageName.toString)
 
     val uri = baseUri
@@ -172,11 +172,11 @@ trait ImageCommands extends DockerCommands with AuthUtils {
     Source(requestChunkedLines(HttpRequest(POST, uri, headers)))
       .filter(_.nonEmpty)
       .map { line =>
-      val out: Option[CreateMessage] = ???
+      val out: Option[CreateImageMessage] = ???
       out
     }.collect {
       case Some(v) => v
-    }.runWith(Sink.publisher[CreateMessage])
+    }.runWith(Sink.publisher[CreateImageMessage])
   }
 
   def tag(from: ImageName, to: ImageName, force: Boolean = false): Future[Boolean] = {

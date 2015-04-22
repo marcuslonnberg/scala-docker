@@ -1,20 +1,20 @@
 package se.marcuslonnberg.scaladocker.remote.models
 
-sealed trait CreateMessage
+sealed trait CreateImageMessage
 
-object CreateMessages {
+object CreateImageMessages {
 
   sealed trait StatusMessage {
     def status: String
   }
 
-  case class Status(status: String) extends CreateMessage with StatusMessage
+  case class Status(status: String) extends CreateImageMessage with StatusMessage
 
-  case class ImageStatus(status: String, id: ImageId) extends CreateMessage with StatusMessage
+  case class ImageStatus(status: String, id: ImageId) extends CreateImageMessage with StatusMessage
 
-  case class Error(error: String) extends CreateMessage
+  case class Error(error: String) extends CreateImageMessage
 
-  case class Progress(status: String, progress: String, progressDetail: ProgressDetail, id: ImageId) extends CreateMessage with StatusMessage
+  case class Progress(status: String, id: ImageId, progress: String, progressDetail: ProgressDetail) extends CreateImageMessage with StatusMessage
 
   case class ProgressDetail(current: Long, total: Option[Long] = None, start: Option[Long] = None)
 

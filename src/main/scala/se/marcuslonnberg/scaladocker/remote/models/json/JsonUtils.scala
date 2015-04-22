@@ -1,6 +1,7 @@
 package se.marcuslonnberg.scaladocker.remote.models.json
 
 import play.api.libs.functional.Functor
+import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
 import scala.collection.{immutable, mutable}
@@ -60,6 +61,12 @@ object JsonUtils {
 
       m.toMap
     }
+  }
+
+  implicit class RichJsPath(path: JsPath) {
+    def readWithDefault[T: Reads](default: T): Reads[T] = path.readNullable[T].map(_.getOrElse(default))
+
+    def formatWithDefault[T](default: T)(implicit format: Format[T]): OFormat[T] = path.formatNullable[T].inmap[T](_.getOrElse(default), Some(_))
   }
 
 }

@@ -3,6 +3,7 @@ package se.marcuslonnberg.scaladocker.remote.models.json
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import se.marcuslonnberg.scaladocker.remote.models._
+import se.marcuslonnberg.scaladocker.remote.models.json.JsonUtils._
 
 trait ContainerFormats extends CommonFormats {
   implicit val containerStatusFormat = {
@@ -40,16 +41,16 @@ trait ContainerFormats extends CommonFormats {
         (JsPath \ "AttachStdin").read[Boolean] and
         (JsPath \ "AttachStdout").read[Boolean] and
         (JsPath \ "AttachStderr").read[Boolean] and
-        (JsPath \ "ExposedPorts").readNullable[Seq[Port]].map(_.getOrElse(Seq.empty)) and
-        (JsPath \ "Env").readNullable[Seq[String]].map(_.getOrElse(Seq.empty)) and
-        (JsPath \ "Cmd").readNullable[Seq[String]].map(_.getOrElse(Seq.empty)) and
-        (JsPath \ "Volumes").readNullable[Seq[String]].map(_.getOrElse(Seq.empty)) and
+        (JsPath \ "ExposedPorts").formatWithDefault[Seq[Port]](Seq.empty) and
+        (JsPath \ "Env").formatWithDefault[Seq[String]](Seq.empty) and
+        (JsPath \ "Cmd").formatWithDefault[Seq[String]](Seq.empty) and
+        (JsPath \ "Volumes").formatWithDefault[Seq[String]](Seq.empty) and
         (JsPath \ "WorkingDir").readNullable[String] and
-        (JsPath \ "Entrypoint").readNullable[Seq[String]].map(_.getOrElse(Seq.empty)) and
+        (JsPath \ "Entrypoint").formatWithDefault[Seq[String]](Seq.empty) and
         (JsPath \ "NetworkDisabled").read[Boolean] and
         (JsPath \ "Tty").read[Boolean] and
         (JsPath \ "OpenStdin").read[Boolean] and
-        (JsPath \ "OnBuild").readNullable[Seq[String]].map(_.getOrElse(Seq.empty))
+        (JsPath \ "OnBuild").formatWithDefault[Seq[String]](Seq.empty)
         ) { (image: ImageName, hostname: Option[String], domainName: Option[String], user: Option[String], memory: Long,
       memorySwap: Long, cpuShares: Long, cpuset: Option[String], attachStdin: Boolean, attachStdout: Boolean,
       attachStderr: Boolean, exposedPorts: Seq[Port], env: Seq[String], cmd: Seq[String], volumes: Seq[String],
@@ -139,20 +140,21 @@ trait ContainerFormats extends CommonFormats {
 
   implicit val deviceMappingFormat = JsonUtils.upperCamelCase(Json.format[DeviceMapping])
 
-  implicit val hostConfigFormat: Format[HostConfig] = ((JsPath \ "Binds").formatNullable[Seq[Volume]].inmap[Seq[Volume]](_.getOrElse(Seq.empty), x => Some(x)) and
-    (JsPath \ "LxcConf").formatNullable[Seq[String]].inmap[Seq[String]](_.getOrElse(Seq.empty), x => Some(x)) and
-    (JsPath \ "Privileged").formatNullable[Boolean].inmap[Boolean](_.getOrElse(false), x => Some(x)) and
-    (JsPath \ "PortBindings").formatNullable[Map[Port, Seq[PortBinding]]](portBindingsObjectFormat).inmap[Map[Port, Seq[PortBinding]]](_.getOrElse(Map.empty), x => Some(x)) and
-    (JsPath \ "Links").formatNullable[Seq[ContainerLink]].inmap[Seq[ContainerLink]](_.getOrElse(Seq.empty), x => Some(x)) and
-    (JsPath \ "PublishAllPorts").formatNullable[Boolean].inmap[Boolean](_.getOrElse(false), x => Some(x)) and
-    (JsPath \ "Dns").formatNullable[Seq[String]].inmap[Seq[String]](_.getOrElse(Seq.empty), x => Some(x)) and
-    (JsPath \ "DnsSearch").formatNullable[Seq[String]].inmap[Seq[String]](_.getOrElse(Seq.empty), x => Some(x)) and
-    (JsPath \ "VolumesFrom").formatNullable[Seq[String]].inmap[Seq[String]](_.getOrElse(Seq.empty), x => Some(x)) and
-    (JsPath \ "Devices").formatNullable[Seq[DeviceMapping]].inmap[Seq[DeviceMapping]](_.getOrElse(Seq.empty), x => Some(x)) and
+  implicit val hostConfigFormat: Format[HostConfig] =
+    ((JsPath \ "Binds").formatWithDefault[Seq[Volume]](Seq.empty) and
+    (JsPath \ "LxcConf").formatWithDefault[Seq[String]](Seq.empty) and
+    (JsPath \ "Privileged").formatWithDefault[Boolean](false) and
+    (JsPath \ "PortBindings").formatWithDefault[Map[Port, Seq[PortBinding]]](Map.empty)(portBindingsObjectFormat) and
+    (JsPath \ "Links").formatWithDefault[Seq[ContainerLink]](Seq.empty) and
+    (JsPath \ "PublishAllPorts").formatWithDefault[Boolean](false) and
+    (JsPath \ "Dns").formatWithDefault[Seq[String]](Seq.empty) and
+    (JsPath \ "DnsSearch").formatWithDefault[Seq[String]](Seq.empty) and
+    (JsPath \ "VolumesFrom").formatWithDefault[Seq[String]](Seq.empty) and
+    (JsPath \ "Devices").formatWithDefault[Seq[DeviceMapping]](Seq.empty) and
     (JsPath \ "NetworkMode").formatNullable[String].inmap[Option[String]](_.filter(_.nonEmpty), identity) and
-    (JsPath \ "CapAdd").formatNullable[Seq[String]].inmap[Seq[String]](_.getOrElse(Seq.empty), x => Some(x)) and
-    (JsPath \ "CapDrop").formatNullable[Seq[String]].inmap[Seq[String]](_.getOrElse(Seq.empty), x => Some(x)) and
-    (JsPath \ "RestartPolicy").formatNullable[RestartPolicy].inmap[RestartPolicy](_.getOrElse(NeverRestart), x => Some(x))
+    (JsPath \ "CapAdd").formatWithDefault[Seq[String]](Seq.empty) and
+    (JsPath \ "CapDrop").formatWithDefault[Seq[String]](Seq.empty) and
+    (JsPath \ "RestartPolicy").formatWithDefault[RestartPolicy](NeverRestart)
     )(HostConfig.apply, unlift(HostConfig.unapply))
 
   implicit val containerStateFormat: Format[ContainerState] = {
