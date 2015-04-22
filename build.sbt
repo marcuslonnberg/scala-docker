@@ -9,15 +9,4 @@ scalaVersion in ThisBuild := "2.11.6"
 libraryDependencies ++= Dependencies.all
 resolvers ++= Dependencies.resolvers
 
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.1" cross CrossVersion.full)
-
-initialCommands in console :=
-  """import se.marcuslonnberg.scaladocker.remote.api._
-    |import se.marcuslonnberg.scaladocker.remote.models._
-    |import akka.actor.ActorSystem
-    |import akka.stream.{MaterializerSettings, FlowMaterializer}
-    |implicit val system = ActorSystem("scala-docker")
-    |import system.dispatcher
-    |implicit val mat = FlowMaterializer(MaterializerSettings())""".stripMargin
-
 publishMavenStyle := true

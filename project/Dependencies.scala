@@ -12,8 +12,7 @@ object Dependencies {
   )
 
   val json = Seq(
-    "com.typesafe.play" %% "play-json" % "2.3.8",
-    "com.kifi" %% "json-annotation" % "0.2"
+    "com.typesafe.play" %% "play-json" % "2.3.8"
   )
 
   val misc = Seq(
