@@ -50,8 +50,9 @@ case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system:
 
   import system.dispatcher
 
-  def run(containerConfig: ContainerConfig,
-    hostConfig: HostConfig,
+  def run(
+    containerConfig: ContainerConfig,
+    hostConfig: HostConfig = HostConfig(),
     name: Option[ContainerName] = None
   )(implicit materializer: FlowMaterializer): Future[ContainerId] = {
     runLocal(containerConfig, hostConfig, name).recoverWith {
@@ -71,7 +72,7 @@ case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system:
 
   def runLocal(
     containerConfig: ContainerConfig,
-    hostConfig: HostConfig,
+    hostConfig: HostConfig = HostConfig(),
     name: Option[ContainerName] = None
   ): Future[ContainerId] = {
     containers.create(containerConfig, name).flatMap { response =>
@@ -264,7 +265,7 @@ trait ContainerCommands extends DockerCommands {
     }
   }
 
-  def start(id: ContainerId, config: HostConfig): Future[ContainerId] = {
+  def start(id: ContainerId, config: HostConfig = HostConfig()): Future[ContainerId] = {
     sendPostRequest(Path / "containers" / id.value / "start", content = config).flatMap(containerResponse(id))
   }
 
