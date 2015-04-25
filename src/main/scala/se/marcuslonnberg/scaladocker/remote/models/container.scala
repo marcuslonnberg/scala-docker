@@ -68,7 +68,17 @@ case class PortBinding(hostIp: String = "0.0.0.0", hostPort: Int)
  *
  * @param image Image to run.
  * @param hostname Container hostname.
+ * @param domainName Container domain name.
  * @param user Username or UID.
+ * @param resourceLimits Resource limits.
+ * @param standardStreams Configuration for standard streams.
+ * @param exposedPorts Ports that the container should expose.
+ * @param env Environment variables.
+ * @param cmd Command to run.
+ * @param volumes Paths inside the container that should be exposed.
+ * @param workingDir Working directory for commands to run in.
+ * @param entryPoint Entry point for the container.
+ * @param networkDisabled Disable network for the container.
  */
 case class ContainerConfig(
   image: ImageName,
@@ -93,7 +103,7 @@ case class ContainerConfig(
  * @param attachStdIn Attach to standard input.
  * @param attachStdOut Attach to standard output.
  * @param attachStdErr Attach to standard error.
- * @param tty Allocate a pseudo-TTY.
+ * @param tty Attach standard streams to a tty.
  * @param openStdin Keep stdin open even if not attached.
  * @param stdinOnce Close stdin when one attached client disconnects.
  */
