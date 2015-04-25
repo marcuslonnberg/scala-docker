@@ -95,9 +95,10 @@ trait ContainerFormats extends CommonFormats {
     ((JsPath \ "Binds").formatWithDefault[Seq[Volume]](Seq.empty) and
       (JsPath \ "LxcConf").formatWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "Privileged").formatWithDefault[Boolean](false) and
-      (JsPath \ "PortBindings").formatNullable[Map[Port, Seq[PortBinding]]](portBindingsObjectFormat) and
+      (JsPath \ "PortBindings").formatWithDefault[Map[Port, Seq[PortBinding]]](Map.empty)(portBindingsObjectFormat) and
       (JsPath \ "Links").formatWithDefault[Seq[ContainerLink]](Seq.empty) and
       (JsPath \ "PublishAllPorts").formatWithDefault[Boolean](false) and
+      (JsPath \ "ReadonlyRootfs").formatWithDefault[Boolean](false) and
       (JsPath \ "Dns").formatWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "DnsSearch").formatWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "VolumesFrom").formatWithDefault[Seq[String]](Seq.empty) and

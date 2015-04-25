@@ -149,5 +149,3 @@ trait CommonFormats {
   })
 
 }
-
-object CommonFormats extends CommonFormats

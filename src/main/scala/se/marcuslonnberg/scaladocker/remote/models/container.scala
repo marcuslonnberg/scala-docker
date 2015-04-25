@@ -57,7 +57,11 @@ object Port {
   }
 }
 
-case class PortBinding(hostIp: String, hostPort: Int)
+object PortBinding {
+  def apply(hostPort: Int): PortBinding = new PortBinding(hostPort = hostPort)
+}
+
+case class PortBinding(hostIp: String = "0.0.0.0", hostPort: Int)
 
 /**
  * Configuration for a container.
@@ -131,15 +135,33 @@ case class ContainerLink(containerName: String, aliasName: Option[String] = None
   def mkString = containerName + aliasName.fold("")(":" + _)
 }
 
+/**
+ * @param binds Volume bindings.
+ * @param lxcConfig LXC specific configurations.
+ * @param privileged Gives the container full access to the host.
+ * @param portBindings A map of exposed container ports to bindings on the host.
+ * @param links Container links.
+ * @param publishAllPorts Allocate a random port for each exposed container port.
+ * @param readonlyRootFilesystem Mount the container's root filesystem as read only.
+ * @param dnsServers DNS servers for the container to use.
+ * @param dnsSearchDomains DNS search domains.
+ * @param volumesFrom Volumes to inherit from other containers.
+ * @param devices Devices to add to the container.
+ * @param networkMode Networking mode for the container
+ * @param capAdd Kernel capabilities to add to the container
+ * @param capDrop Kernel capabilities to drop from the container.
+ * @param restartPolicy Behavior to apply when the container exits.
+ */
 case class HostConfig(
   binds: Seq[Volume] = Seq.empty,
-  lxcConf: Seq[String] = Seq.empty,
+  lxcConfig: Seq[String] = Seq.empty,
   privileged: Boolean = false,
-  portBindings: Option[Map[Port, Seq[PortBinding]]] = None,
+  portBindings: Map[Port, Seq[PortBinding]] = Map.empty,
   links: Seq[ContainerLink] = Seq.empty,
   publishAllPorts: Boolean = false,
-  dns: Seq[String] = Seq.empty,
-  dnsSearch: Seq[String] = Seq.empty,
+  readonlyRootFilesystem: Boolean = false,
+  dnsServers: Seq[String] = Seq.empty,
+  dnsSearchDomains: Seq[String] = Seq.empty,
   volumesFrom: Seq[String] = Seq.empty,
   devices: Seq[DeviceMapping] = Seq.empty,
   networkMode: Option[String] = None,
