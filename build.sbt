@@ -1,3 +1,5 @@
+import ReleaseKeys._
+
 name := "scala-docker"
 organization := "se.marcuslonnberg"
 organizationHomepage := Some(url("https://github.com/marcuslonnberg"))
@@ -34,3 +36,6 @@ pomExtra := {
 }
 
 useGpg := true
+
+releaseSettings
+publishArtifactsAction <<= PgpKeys.publishSigned

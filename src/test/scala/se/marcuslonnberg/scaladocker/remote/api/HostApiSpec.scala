@@ -12,6 +12,6 @@ class HostApiSpec extends TestKit(ActorSystem("host-api")) with FlatSpecLike wit
   val client = DockerClient()
 
   "Host API" should "ping server" in {
-    client.host.ping().futureValue shouldEqual ()
+    client.host.ping().futureValue shouldEqual (())
   }
 }
