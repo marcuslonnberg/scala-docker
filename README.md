@@ -24,7 +24,7 @@ val imageName = ImageName("fancy-service")
 val portBindings: Map[Port, Seq[PortBinding]] = Map(Tcp(8080) -> Seq(PortBinding("0.0.0.0", 8080)))
 
 for {
-  containerId: ContainerId <- docker.run(ContainerConfig(imageName), HostConfig(portBindings = Some(portBindings)))
+  containerId: ContainerId <- docker.run(ContainerConfig(imageName), HostConfig(portBindings = portBindings))
   containerInfo: ContainerInfo <- docker.containers.get(containerId)
 } yield containerInfo
 ```

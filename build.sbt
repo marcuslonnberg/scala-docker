@@ -1,12 +1,36 @@
 name := "scala-docker"
+organization := "se.marcuslonnberg"
+organizationHomepage := Some(url("https://github.com/marcuslonnberg"))
 
-organization in ThisBuild := "se.marcuslonnberg"
-
-version := "0.1.0-SNAPSHOT"
-
-scalaVersion in ThisBuild := "2.11.6"
+scalaVersion := "2.11.6"
+scalacOptions := Seq("-deprecation", "-unchecked", "-feature")
 
 libraryDependencies ++= Dependencies.all
 resolvers ++= Dependencies.resolvers
 
+licenses := Seq("MIT License" -> url("https://github.com/marcuslonnberg/scala-docker/blob/master/LICENSE"))
+homepage := Some(url("https://github.com/marcuslonnberg/scala-docker"))
+scmInfo := Some(ScmInfo(url("https://github.com/marcuslonnberg/scala-docker"), "scm:git:git://github.com:marcuslonnberg/scala-docker.git"))
+
 publishMavenStyle := true
+publishTo := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value)
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}
+
+pomIncludeRepository := { _ => false}
+
+pomExtra := {
+  <developers>
+    <developer>
+      <id>marcuslonnberg</id>
+      <name>Marcus Lönnberg</name>
+      <url>http://marcuslonnberg.se</url>
+    </developer>
+  </developers>
+}
+
+useGpg := true
