@@ -1,12 +1,12 @@
-Scala-Docker
+scala-docker
 ============
 
-Scala client using reactive streams (akka-streams) to communicate with Docker hosts.
+Scala client using reactive streams (akka-streams) to communicate with [Docker](https://docker.com) hosts.
 
 Setup
 -----
 
-Add as a dependency:
+Add as a dependency in your `build.sbt`:
 
 ```scala
 libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.1.0"
