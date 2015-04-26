@@ -45,21 +45,21 @@ trait ContainerFormats extends CommonFormats {
       )(ContainerResourceLimits.apply, unlift(ContainerResourceLimits.unapply))
 
   implicit val containerConfigFormat: Format[ContainerConfig] =
-      ((JsPath \ "Image").format[ImageName] and
-        (JsPath \ "Hostname").formatNullable[String] and
-        (JsPath \ "DomainName").formatNullable[String] and
-        (JsPath \ "User").formatNullable[String] and
-        containerResourceLimitsFormat and
-        standardStreamsConfigFormat and
-        (JsPath \ "ExposedPorts").formatWithDefault[Seq[Port]](Seq.empty) and
-        (JsPath \ "Env").formatWithDefault[Seq[String]](Seq.empty) and
-        (JsPath \ "Cmd").formatWithDefault[Seq[String]](Seq.empty) and
-        (JsPath \ "Volumes").formatWithDefault[Seq[String]](Seq.empty) and
-        (JsPath \ "WorkingDir").formatNullable[String] and
-        (JsPath \ "Entrypoint").formatNullable[Seq[String]] and
-        (JsPath \ "NetworkDisabled").formatWithDefault[Boolean](false) and
-        (JsPath \ "OnBuild").formatWithDefault[Seq[String]](Seq.empty)
-        )(ContainerConfig.apply, unlift(ContainerConfig.unapply))
+    ((JsPath \ "Image").format[ImageName] and
+      (JsPath \ "Hostname").formatNullable[String] and
+      (JsPath \ "DomainName").formatNullable[String] and
+      (JsPath \ "User").formatNullable[String] and
+      containerResourceLimitsFormat and
+      standardStreamsConfigFormat and
+      (JsPath \ "ExposedPorts").formatWithDefault[Seq[Port]](Seq.empty) and
+      (JsPath \ "Env").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "Cmd").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "Volumes").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "WorkingDir").formatNullable[String] and
+      (JsPath \ "Entrypoint").formatNullable[Seq[String]] and
+      (JsPath \ "NetworkDisabled").formatWithDefault[Boolean](false) and
+      (JsPath \ "OnBuild").formatWithDefault[Seq[String]](Seq.empty)
+      )(ContainerConfig.apply, unlift(ContainerConfig.unapply))
 
   implicit val restartPolicyFormat = Format[RestartPolicy](Reads { in =>
     (JsPath \ "Name").read[String].reads(in).flatMap {

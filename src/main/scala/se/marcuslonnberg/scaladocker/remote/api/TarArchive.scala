@@ -2,7 +2,7 @@ package se.marcuslonnberg.scaladocker.remote.api
 
 import java.io._
 
-import org.kamranzafar.jtar.{TarOutputStream, TarEntry}
+import org.kamranzafar.jtar.{TarEntry, TarOutputStream}
 
 import scala.annotation.tailrec
 

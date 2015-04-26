@@ -1,7 +1,7 @@
 package se.marcuslonnberg.scaladocker.remote.models.json
 
 import org.joda.time.DateTime
-import org.joda.time.format.{DateTimeFormatterBuilder, DateTimeFormat, ISODateTimeFormat}
+import org.joda.time.format.{DateTimeFormat, DateTimeFormatterBuilder, ISODateTimeFormat}
 import play.api.data.validation.ValidationError
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
