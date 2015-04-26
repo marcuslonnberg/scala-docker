@@ -3,10 +3,11 @@ Scala-Docker
 
 Scala client using reactive streams (akka-streams) to communicate with Docker hosts.
 
-Example
--------
+Usage
+-----
 
-Creating a DockerClient:
+### Creating a DockerClient
+
 ```scala
 implicit val system = ActorSystem()
 implicit val materializer = ActorFlowMaterializer(ActorFlowMaterializerSettings(system))
@@ -17,7 +18,7 @@ val docker = DockerClient()
 If no host is given to the `DockerClient`, then the host is taken from the environment variable `DOCKER_HOST`.
 (No TLS support yet)
 
-Running a container
+### Running a container
 
 ```scala
 val imageName = ImageName("fancy-service")
