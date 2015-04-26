@@ -3,6 +3,15 @@ Scala-Docker
 
 Scala client using reactive streams (akka-streams) to communicate with Docker hosts.
 
+Setup
+-----
+
+Add as a dependency:
+
+```scala
+libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.1.0"
+```
+
 Usage
 -----
 
