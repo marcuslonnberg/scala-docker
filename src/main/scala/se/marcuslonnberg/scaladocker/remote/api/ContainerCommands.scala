@@ -1,9 +1,9 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
-import akka.http.model.HttpMethods._
-import akka.http.model.Uri.{Path, Query}
-import akka.http.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
-import akka.http.unmarshalling._
+import akka.http.scaladsl.model.HttpMethods._
+import akka.http.scaladsl.model.Uri.{Path, Query}
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
+import akka.http.scaladsl.unmarshalling._
 import org.reactivestreams.Publisher
 import se.marcuslonnberg.scaladocker.remote.models._
 import se.marcuslonnberg.scaladocker.remote.models.json._

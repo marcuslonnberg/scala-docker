@@ -2,13 +2,13 @@ import sbt._
 
 object Dependencies {
   val akkaVersion = "2.3.9"
-  val akkaHttpStreamsVersion = "1.0-M5"
+  val akkaHttpStreamsVersion = "1.0-RC1"
 
   val akka = Seq(
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,
     "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
     "com.typesafe.akka" %% "akka-stream-experimental" % akkaHttpStreamsVersion,
-    "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpStreamsVersion
+    "com.typesafe.akka" %% "akka-http-scala-experimental" % akkaHttpStreamsVersion
   )
 
   val json = Seq(

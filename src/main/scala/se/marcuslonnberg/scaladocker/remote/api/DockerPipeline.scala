@@ -1,14 +1,14 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
-import akka.http.Http
-import akka.http.marshalling.Marshaller
-import akka.http.marshalling.Marshalling.WithFixedCharset
-import akka.http.model.Uri.{Path, Query}
-import akka.http.model._
-import akka.http.unmarshalling.FromResponseUnmarshaller
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshalling.Marshaller
+import akka.http.scaladsl.marshalling.Marshalling.WithFixedCharset
+import akka.http.scaladsl.model.Uri.{Path, Query}
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.FromResponseUnmarshaller
+import akka.stream.FlowMaterializer
 import akka.stream.scaladsl._
-import akka.stream.{FlattenStrategy, FlowMaterializer}
 import akka.util.Timeout
 import org.reactivestreams.Publisher
 import play.api.libs.json._

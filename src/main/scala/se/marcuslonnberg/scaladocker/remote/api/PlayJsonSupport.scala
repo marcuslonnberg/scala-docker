@@ -1,8 +1,8 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
-import akka.http.marshalling.Marshaller
-import akka.http.model._
-import akka.http.unmarshalling.Unmarshaller
+import akka.http.scaladsl.marshalling.Marshaller
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.FlowMaterializer
 import play.api.libs.json.{Json, Reads, Writes}
 

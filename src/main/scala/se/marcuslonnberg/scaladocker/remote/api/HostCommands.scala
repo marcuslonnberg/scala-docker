@@ -1,7 +1,7 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
-import akka.http.model.StatusCodes
-import akka.http.model.Uri.Path
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.Uri.Path
 
 import scala.concurrent.Future
 

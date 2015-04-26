@@ -1,7 +1,7 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
-import akka.http.model.headers.RawHeader
-import akka.http.model.{HttpHeader, Uri}
+import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.{HttpHeader, Uri}
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.Json
 import se.marcuslonnberg.scaladocker.remote.models.RegistryAuth

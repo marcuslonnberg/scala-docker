@@ -1,13 +1,13 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
-import akka.http.model.HttpMethods._
-import akka.http.model.Uri.Path
-import akka.http.model.{HttpRequest, StatusCodes}
-import akka.http.unmarshalling._
+import akka.http.scaladsl.model.HttpMethods._
+import akka.http.scaladsl.model.Uri.Path
+import akka.http.scaladsl.model.{HttpRequest, StatusCodes}
+import akka.http.scaladsl.unmarshalling._
 import akka.stream.scaladsl.{Sink, Source}
 import org.reactivestreams.Publisher
-import se.marcuslonnberg.scaladocker.remote.models.{CreateImageMessage, Image, ImageName}
 import se.marcuslonnberg.scaladocker.remote.models.json._
+import se.marcuslonnberg.scaladocker.remote.models.{CreateImageMessage, Image, ImageName}
 
 import scala.concurrent.Future
 

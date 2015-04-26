@@ -2,8 +2,8 @@ package se.marcuslonnberg.scaladocker.remote.api
 
 import java.io._
 
-import akka.http.model.Uri.Path
-import akka.http.model._
+import akka.http.scaladsl.model.Uri.Path
+import akka.http.scaladsl.model._
 import akka.stream.scaladsl.{Sink, Source}
 import org.reactivestreams.Publisher
 import se.marcuslonnberg.scaladocker.remote.models.json._
@@ -17,7 +17,7 @@ trait BuildCommand extends DockerCommands {
       "rm" -> rm.toString)
     val uri = createUri(Path / "build", query)
 
-    val entity = HttpEntity(ContentType(MediaType.custom("application/tar")), readBytes(tarFile))
+    val entity = HttpEntity(ContentType(MediaTypes.`application/x-tar`), readBytes(tarFile))
     val request = HttpRequest(HttpMethods.POST, uri, entity = entity)
 
     Source(requestChunkedLinesJson[BuildMessage](request))

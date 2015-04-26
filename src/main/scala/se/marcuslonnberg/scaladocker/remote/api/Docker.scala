@@ -1,8 +1,8 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
-import akka.http.model._
-import akka.http.unmarshalling.PredefinedFromEntityUnmarshallers
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers
 import akka.stream._
 import akka.stream.scaladsl._
 import se.marcuslonnberg.scaladocker.remote.models._
