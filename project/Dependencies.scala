@@ -1,7 +1,7 @@
 import sbt._
 
 object Dependencies {
-  val akkaVersion = "2.3.9"
+  val akkaVersion = "2.3.10"
   val akkaHttpStreamsVersion = "1.0-RC1"
 
   val akka = Seq(
