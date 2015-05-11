@@ -127,10 +127,10 @@ trait DockerPipeline extends PlayJsonSupport {
       response.entity match {
         case HttpEntity.Chunked(contentType, chunks) =>
           if (contentType.mediaType == MediaTypes.`application/json`) {
-            chunks.map { chunk =>
-              val str = chunk.data().utf8String
-              Json.parse(str).as[T]
-            }
+            chunks
+              .map(_.data().utf8String)
+              .filter(_.nonEmpty)
+              .map(str => Json.parse(str).as[T])
           } else {
             throw new RuntimeException(s"Expected application/json as content type but got $contentType on request to: ${httpRequest.uri}")
           }
