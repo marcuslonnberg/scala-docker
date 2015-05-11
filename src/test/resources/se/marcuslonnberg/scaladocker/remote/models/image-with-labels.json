@@ -1,0 +1,17 @@
+{
+  "Created": 1431350201,
+  "Id": "0fe67d61176127f803b744f60d8ca59ade0ffff50ff2da73347b0061352a5cff",
+  "Labels": {
+    "build.appName": "fancy-app",
+    "build.buildTime": "1431350201000"
+  },
+  "ParentId": "025260b50bb530b7385c3a5088628a76422c4eafc5548f5cfe7134bb17949fb9",
+  "RepoDigests": [
+
+  ],
+  "RepoTags": [
+    "fancy-app:latest"
+  ],
+  "Size": 0,
+  "VirtualSize": 702281438
+}

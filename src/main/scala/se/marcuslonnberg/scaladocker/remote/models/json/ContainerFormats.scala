@@ -1,5 +1,6 @@
 package se.marcuslonnberg.scaladocker.remote.models.json
 
+import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import se.marcuslonnberg.scaladocker.remote.models._
@@ -7,9 +8,15 @@ import se.marcuslonnberg.scaladocker.remote.models.json.JsonUtils._
 
 trait ContainerFormats extends CommonFormats {
   implicit val containerStatusFormat = {
-    implicit val a = portBindingsArrayFormat
-    implicit val b = dateTimeSecondsFormat
-    JsonUtils.upperCamelCase(Json.format[ContainerStatus])
+    ((JsPath \ "Command").format[String] and
+      (JsPath \ "Created").format[DateTime](dateTimeSecondsFormat) and
+      (JsPath \ "Id").format[ContainerHashId] and
+      (JsPath \ "Image").format[ImageName] and
+      (JsPath \ "Names").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "Ports").formatWithDefault[Map[Port, Seq[PortBinding]]](Map.empty)(portBindingsArrayFormat) and
+      (JsPath \ "Labels").formatWithDefault[Map[String, String]](Map.empty) and
+      (JsPath \ "Status").format[String]
+      )(ContainerStatus.apply, unlift(ContainerStatus.unapply))
   }
 
   implicit val volumeBindingFormat = Format[Volume](Reads { in =>
@@ -57,6 +64,7 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "Volumes").formatWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "WorkingDir").formatNullable[String] and
       (JsPath \ "Entrypoint").formatNullable[Seq[String]] and
+      (JsPath \ "Labels").formatWithDefault[Map[String, String]](Map.empty) and
       (JsPath \ "NetworkDisabled").formatWithDefault[Boolean](false) and
       (JsPath \ "OnBuild").formatWithDefault[Seq[String]](Seq.empty)
       )(ContainerConfig.apply, unlift(ContainerConfig.unapply))

@@ -6,7 +6,8 @@ case class Image(
   created: DateTime,
   id: ImageId,
   parentId: ImageId,
-  repoTags: List[ImageName],
+  repoTags: Seq[ImageName],
+  labels: Map[String, String],
   size: Long,
   virtualSize: Long
 )

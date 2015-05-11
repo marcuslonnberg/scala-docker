@@ -12,33 +12,49 @@ class JsonSpec extends FlatSpec with Matchers {
   "ContainerInfo" should "be serializable and deserializable with JSON" in {
     val infoJson = readResourcePlay("container-info.json")
     val info = infoJson.as[ContainerInfo]
-    compareJson2(info)
+    compareJsonFromModel(info)
   }
 
   it should "be serializable and deserializable with JSON (2)" in {
     val infoJson = readResourcePlay("container-info-2.json")
     val info = infoJson.as[ContainerInfo]
-    compareJson2(info)
+    compareJsonFromModel(info)
   }
 
   "ContainerConfig" should "be serializable and deserializable with JSON" in {
     val containerConfigJson = readResourcePlay("container-config.json")
     val containerConfig = containerConfigJson.as[ContainerConfig]
-    compareJson2(containerConfig)
+    compareJsonFromModel(containerConfig)
   }
 
   "ContainerStatus" should "be serializable and deserializable with JSON" in {
     val statusJson = readResourcePlay("container-status.json")
+    val status = statusJson.as[ContainerStatus]
+    compareJsonFromModel[ContainerStatus](status)
+    status.created shouldEqual new DateTime(1409179933000L)
+  }
+
+  it should "handle labels" in {
+    val statusJson = readResourcePlay("container-status-with-labels.json")
     compareJson[ContainerStatus](statusJson)
     val status = statusJson.as[ContainerStatus]
-    status.created shouldEqual new DateTime(1409179933000L)
+    status.created shouldEqual new DateTime(1431359918000L)
+    status.labels.get("build.appName") shouldEqual Some("fancy-app")
   }
 
   "Image" should "be serializable and deserializable with JSON" in {
     val imageJson = readResourcePlay("image.json")
-    compareJson[Image](imageJson)
     val image = imageJson.as[Image]
+    compareJsonFromModel[Image](image)
     image.created shouldEqual new DateTime(1409856115000L)
+  }
+
+  it should "hanled labels" in {
+    val imageJson = readResourcePlay("image-with-labels.json")
+    val image = imageJson.as[Image]
+    compareJsonFromModel[Image](image)
+    image.created shouldEqual new DateTime(1431350201000L)
+    image.labels.get("build.appName") shouldEqual Some("fancy-app")
   }
 
   "Volume bindings" should "be serializable and deserializable" in {
@@ -64,7 +80,7 @@ class JsonSpec extends FlatSpec with Matchers {
     value shouldEqual obj
   }
 
-  def compareJson2[T: Format](obj: T) {
+  def compareJsonFromModel[T: Format](obj: T) {
     val expectedJson = Json.toJson(obj)
     val value = expectedJson.as[T]
     value shouldEqual obj

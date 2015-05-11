@@ -1,0 +1,21 @@
+{
+  "Command": "bash",
+  "Created": 1431359918,
+  "Id": "a485929b45aabf33700e3bfa1b654ee50d8ede774ea36d9055da90b06c443749",
+  "Image": "fancy-app:latest",
+  "Labels": {
+    "build.appName": "fancy-app",
+    "build.buildTime": "1431350199027"
+  },
+  "Names": [
+    "/fancy-app"
+  ],
+  "Ports": [
+    {
+      "PrivatePort": 8080,
+      "Type": "tcp"
+    }
+  ],
+  "Status": "Up 14 minutes"
+}
+

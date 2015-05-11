@@ -93,6 +93,7 @@ case class ContainerConfig(
   volumes: Seq[String] = Seq.empty,
   workingDir: Option[String] = None,
   entryPoint: Option[Seq[String]] = None,
+  labels: Map[String, String] = Map.empty,
   networkDisabled: Boolean = false,
   onBuild: Seq[String] = Seq.empty
 )
@@ -254,7 +255,8 @@ case class ContainerStatus(
   created: DateTime,
   id: ContainerHashId,
   image: ImageName,
-  names: List[String],
+  names: Seq[String],
   ports: Map[Port, Seq[PortBinding]] = Map.empty,
+  labels: Map[String, String] = Map.empty,
   status: String
 )
