@@ -124,16 +124,11 @@ trait CommonFormats {
     }
   }
 
-  def defaultMap[K, V](format: OFormat[Option[Map[K, V]]]): OFormat[Map[K, V]] =
-    format.inmap({ i =>
-      i.getOrElse(Map.empty)
-    }, { i => Some(i) })
-
   val portBindingsObjectFormat: Format[Map[Port, Seq[PortBinding]]] = {
-    JsPath.format[Map[String, Seq[PortBinding]]].inmap[Map[Port, Seq[PortBinding]]](m => m.map {
-      case (Port(port), bindings) => port -> bindings
+    JsPath.format[Map[String, Option[Seq[PortBinding]]]].inmap[Map[Port, Seq[PortBinding]]](m => m.map {
+      case (Port(port), bindings) => port -> bindings.getOrElse(Seq.empty)
     }, m => m.map {
-      case (port, bindings) => port.toString -> bindings
+      case (port, bindings) => port.toString -> Some(bindings)
     })
   }
 

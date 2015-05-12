@@ -21,6 +21,13 @@ class JsonSpec extends FlatSpec with Matchers {
     compareJsonFromModel(info)
   }
 
+  it should "handle labels" in {
+    val infoJson = readResourcePlay("container-info-with-labels.json")
+    val info = infoJson.as[ContainerInfo]
+    compareJsonFromModel(info)
+    info.config.labels.get("build.appName") shouldEqual Some("fancy-app")
+  }
+
   "ContainerConfig" should "be serializable and deserializable with JSON" in {
     val containerConfigJson = readResourcePlay("container-config.json")
     val containerConfig = containerConfigJson.as[ContainerConfig]

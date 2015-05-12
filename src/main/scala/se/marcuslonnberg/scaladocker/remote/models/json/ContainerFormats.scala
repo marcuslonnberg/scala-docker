@@ -61,7 +61,8 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "ExposedPorts").formatWithDefault[Seq[Port]](Seq.empty) and
       (JsPath \ "Env").formatWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "Cmd").formatWithDefault[Seq[String]](Seq.empty) and
-      (JsPath \ "Volumes").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "Volumes").formatWithDefault[Map[String, JsObject]](Map.empty)
+        .inmap[Seq[String]](_.keys.toSeq, _.map(_ -> JsObject(Seq.empty)).toMap) and
       (JsPath \ "WorkingDir").formatNullable[String] and
       (JsPath \ "Entrypoint").formatNullable[Seq[String]] and
       (JsPath \ "Labels").formatWithDefault[Map[String, String]](Map.empty) and
@@ -133,7 +134,7 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "IPPrefixLen").format[Int] and
       (JsPath \ "Gateway").format[String] and
       (JsPath \ "Bridge").format[String] and
-      defaultMap((JsPath \ "Ports").formatNullable(portBindingsObjectFormat))
+      (JsPath \ "Ports").formatWithDefault[Map[Port, Seq[PortBinding]]](Map.empty)(portBindingsObjectFormat)
       )(NetworkSettings.apply, unlift(NetworkSettings.unapply))
 
   implicit val containerInfoFormat: Format[ContainerInfo] = {
