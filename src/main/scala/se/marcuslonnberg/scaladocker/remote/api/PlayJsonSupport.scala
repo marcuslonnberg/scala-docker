@@ -9,9 +9,8 @@ import play.api.libs.json.{Json, Reads, Writes}
 import scala.concurrent.ExecutionContext
 
 trait PlayJsonSupport {
-  private[api] implicit def playJsonUnmarshallerResponse[T](implicit ec: ExecutionContext, reader: Reads[T], materializer: FlowMaterializer): Unmarshaller[HttpResponse, T] =
-    Unmarshaller[HttpResponse, T]({
-      case x: HttpResponse =>
+  private[api] implicit def playJsonUnmarshallerResponse[T](implicit reader: Reads[T], materializer: FlowMaterializer): Unmarshaller[HttpResponse, T] =
+    Unmarshaller[HttpResponse, T]({ implicit ex => x: HttpResponse =>
         playJsonUnmarshallerEntity.apply(x.entity)
     })
 
