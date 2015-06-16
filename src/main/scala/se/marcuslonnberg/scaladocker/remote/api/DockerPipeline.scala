@@ -1,12 +1,12 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling.WithFixedCharset
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.FromResponseUnmarshaller
+import akka.http.scaladsl.{Http, HttpsContext}
 import akka.stream.FlowMaterializer
 import akka.stream.scaladsl._
 import akka.util.Timeout
@@ -16,8 +16,14 @@ import play.api.libs.json._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-trait DockerPipeline extends PlayJsonSupport {
+trait DockerPipeline extends PlayJsonSupport with TlsSupport {
   private[api] def baseUri: Uri
+
+  private[api] def tls: Option[Tls]
+
+  private[api] def httpsContext: Option[HttpsContext] = {
+    tls.map(tls => HttpsContext(createSSLContext(tls)))
+  }
 
   private[api] def createUri(path: Path, query: Query): Uri = {
     baseUri.withPath(baseUri.path ++ path).withQuery(query)
@@ -81,12 +87,13 @@ trait DockerPipeline extends PlayJsonSupport {
 
   private[api] def sendRequest(
     request: HttpRequest
-  )(implicit system: ActorSystem,
+  )(implicit
+    system: ActorSystem,
     materializer: FlowMaterializer,
     timeout: Timeout = Timeout(30.seconds)
   ): Future[HttpResponse] = {
     val connection = Http(system)
-      .outgoingConnection(request.uri.authority.host.address(), request.uri.effectivePort)
+      .outgoingConnectionTls(request.uri.authority.host.address(), request.uri.effectivePort, httpsContext = httpsContext)
 
     Source.single(request)
       .via(connection)
@@ -95,7 +102,8 @@ trait DockerPipeline extends PlayJsonSupport {
 
   private[api] def requestChunkedLines(
     httpRequest: HttpRequest
-  )(implicit system: ActorSystem,
+  )(implicit
+    system: ActorSystem,
     materializer: FlowMaterializer
   ): Publisher[String] = {
     val eventualResponse = sendRequest(httpRequest)
@@ -117,7 +125,8 @@ trait DockerPipeline extends PlayJsonSupport {
 
   private[api] def requestChunkedLinesJson[T](
     httpRequest: HttpRequest
-  )(implicit system: ActorSystem,
+  )(implicit
+    system: ActorSystem,
     materializer: FlowMaterializer,
     reader: Reads[T]
   ): Publisher[T] = {

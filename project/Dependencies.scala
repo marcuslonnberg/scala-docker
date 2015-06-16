@@ -19,7 +19,8 @@ object Dependencies {
     "org.kamranzafar" % "jtar" % "2.2",
     "commons-codec" % "commons-codec" % "1.10",
     "com.github.nscala-time" %% "nscala-time" % "2.0.0",
-    "org.scalatest" %% "scalatest" % "2.2.4" % "test"
+    "org.scalatest" %% "scalatest" % "2.2.4" % "test",
+    "ca.juliusdavies" % "not-yet-commons-ssl" % "0.3.11"
   )
 
   val all =

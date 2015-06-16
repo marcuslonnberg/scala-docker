@@ -11,18 +11,25 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 object DockerClient {
   def apply()(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient = {
-    val key = "DOCKER_HOST"
-    val value = sys.env.get(key).filter(_.nonEmpty).getOrElse {
-      sys.error(s"Environment variable $key is not set")
+    def env(key: String): Option[String] = sys.env.get(key).filter(_.nonEmpty)
+
+    val host = env("DOCKER_HOST").getOrElse {
+      sys.error(s"Environment variable DOCKER_HOST is not set")
     }
-    apply(Uri(value.replaceFirst("tcp:", "http:")), Seq.empty)
+    val tls = env("DOCKER_TLS_VERIFY").filterNot(v => v == "0" || v == "false").flatMap { _ =>
+      env("DOCKER_CERT_PATH").map(Tls.fromDir)
+    }
+
+    apply(Uri(host.replaceFirst("tcp:", "http:")), tls, Seq.empty)
   }
 
-  def apply(host: String, port: Int = 2375)(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient =
-    apply(Uri(s"http://$host:$port"), Seq.empty)
+  def apply(host: String, port: Int = 2375, tls: Option[Tls] = None, auths: Seq[RegistryAuth] = Seq.empty)
+      (implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient = {
+    apply(Uri(s"http://$host:$port"), tls, auths)
+  }
 }
 
-case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system: ActorSystem, materializer: FlowMaterializer) {
+case class DockerClient(baseUri: Uri, tls: Option[Tls], auths: Seq[RegistryAuth])(implicit system: ActorSystem, materializer: FlowMaterializer) {
   val containers: ContainerCommands = new ContainerCommands with Context
   val host: HostCommands = new HostCommands with Context
   val images: ImageCommands with BuildCommand = new ImageCommands with BuildCommand with Context {
@@ -32,6 +39,8 @@ case class DockerClient(baseUri: Uri, auths: Seq[RegistryAuth])(implicit system:
   trait Context {
     this: DockerCommands =>
     private[api] override def baseUri = DockerClient.this.baseUri
+
+    private[api] override def tls: Option[Tls] = DockerClient.this.tls
 
     private[api] implicit def system: ActorSystem = DockerClient.this.system
 
