@@ -5,6 +5,7 @@ organization := "se.marcuslonnberg"
 organizationHomepage := Some(url("https://github.com/marcuslonnberg"))
 
 scalaVersion := "2.11.6"
+crossScalaVersions := Seq("2.10.5", "2.11.6")
 scalacOptions := Seq("-deprecation", "-unchecked", "-feature")
 
 libraryDependencies ++= Dependencies.all
