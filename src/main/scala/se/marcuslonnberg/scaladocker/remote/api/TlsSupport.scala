@@ -31,22 +31,28 @@ trait TlsSupport {
     val cert = readCert(tls.cert)
     val maybeCaCert = tls.caCert.map(readCert)
 
-    val keyStore = KeyStore.getInstance(KeyStore.getDefaultType)
-    keyStore.load(null, null)
+    val keyManagers = {
+      val keyStore = KeyStore.getInstance(KeyStore.getDefaultType)
+      keyStore.load(null, null)
+      keyStore.setEntry("key", new KeyStore.PrivateKeyEntry(privateKey, cert), new KeyStore.PasswordProtection(emptyPassword))
 
-    keyStore.setEntry("key", new KeyStore.PrivateKeyEntry(privateKey, cert), new KeyStore.PasswordProtection(emptyPassword))
-
-    val trustManager = TrustManagerFactory.getInstance(algorithm)
-    maybeCaCert.foreach { caCert =>
-      keyStore.setCertificateEntry("cacert", caCert.head)
+      val keyManager = KeyManagerFactory.getInstance(algorithm)
+      keyManager.init(keyStore, emptyPassword)
+      keyManager.getKeyManagers
     }
-    trustManager.init(keyStore)
 
-    val keyManager = KeyManagerFactory.getInstance(algorithm)
-    keyManager.init(keyStore, emptyPassword)
+    val trustManagers = maybeCaCert.map { caCert =>
+      val trustManager = TrustManagerFactory.getInstance(algorithm)
+      val keyStore = KeyStore.getInstance(KeyStore.getDefaultType)
+      keyStore.load(null, null)
+      keyStore.setCertificateEntry("cacert", caCert.head)
+
+      trustManager.init(keyStore)
+      trustManager.getTrustManagers
+    }
 
     val context = SSLContext.getInstance(protocol)
-    context.init(keyManager.getKeyManagers, trustManager.getTrustManagers, new SecureRandom)
+    context.init(keyManagers, trustManagers.orNull, new SecureRandom)
     context
   }
 
