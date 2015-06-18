@@ -92,8 +92,16 @@ trait DockerPipeline extends PlayJsonSupport with TlsSupport {
     materializer: FlowMaterializer,
     timeout: Timeout = Timeout(30.seconds)
   ): Future[HttpResponse] = {
-    val connection = Http(system)
-      .outgoingConnectionTls(request.uri.authority.host.address(), request.uri.effectivePort, httpsContext = httpsContext)
+    val connection = {
+      val address = request.uri.authority.host.address()
+      val port = request.uri.effectivePort
+      val http = Http(system)
+      if (httpsContext.isDefined) {
+        http.outgoingConnectionTls(address, port, httpsContext = httpsContext)
+      } else {
+        http.outgoingConnection(address, port)
+      }
+    }
 
     Source.single(request)
       .via(connection)
