@@ -1,7 +1,7 @@
 import sbt._
 
 object Dependencies {
-  val akkaVersion = "2.3.10"
+  val akkaVersion = "2.3.11"
   val akkaHttpStreamsVersion = "1.0-RC3"
 
   val akka = Seq(
@@ -19,7 +19,7 @@ object Dependencies {
     "org.kamranzafar" % "jtar" % "2.2",
     "commons-codec" % "commons-codec" % "1.10",
     "com.github.nscala-time" %% "nscala-time" % "2.0.0",
-    "org.scalatest" %% "scalatest" % "2.2.4" % "test",
+    "org.scalatest" %% "scalatest" % "2.2.5" % "test",
     "ca.juliusdavies" % "not-yet-commons-ssl" % "0.3.11"
   )
 
