@@ -1,0 +1,10 @@
+language: scala
+scala:
+  - 2.10.5
+jdk:
+  - oraclejdk8
+  - oraclejdk7
+  - openjdk7
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION "testOnly -- -l se.marcuslonnberg.scaladocker.RemoteApiTest"
+sudo: false
