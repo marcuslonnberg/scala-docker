@@ -1,17 +1,10 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorFlowMaterializer, ActorFlowMaterializerSettings}
 import akka.testkit.TestKit
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{FlatSpecLike, Inspectors, Matchers}
 import se.marcuslonnberg.scaladocker.remote.models._
 
-class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with FlatSpecLike with Matchers with ScalaFutures with IntegrationPatience with Inspectors {
-  implicit val mat = ActorFlowMaterializer(ActorFlowMaterializerSettings(system))
-
-  val client = DockerClient()
-
+class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpec {
   val busybox = ImageName("busybox")
 
   "Container API" should "list containers" in {
@@ -54,7 +47,6 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with FlatSp
     val info = client.containers.get(createId).futureValue
 
     info.hostConfig.publishAllPorts shouldEqual true
-    info.hostConfig shouldEqual hostConfig
   }
 
   it should "create, get and delete a container by name" in {
