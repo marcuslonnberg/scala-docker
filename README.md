@@ -9,8 +9,10 @@ Setup
 Add as a dependency in your `build.sbt`:
 
 ```scala
-libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.1.0"
+libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.2.0"
 ```
+
+Cross built for Scala 2.10 and 2.11. 
 
 Usage
 -----
@@ -24,8 +26,8 @@ implicit val materializer = ActorFlowMaterializer(ActorFlowMaterializerSettings(
 val docker = DockerClient()
 ```
 
-If no host is given to the `DockerClient`, then the host is taken from the environment variable `DOCKER_HOST`.
-(No TLS support yet)
+`DockerClient()` will now which Docker host to connect to by reading `DOCKER_HOST`, `DOCKER_TLS_VERIFY` and `DOCKER_CERT_PATH`.
+Host and TLS settings can also be provided as arguments. 
 
 ### Running a container
 
