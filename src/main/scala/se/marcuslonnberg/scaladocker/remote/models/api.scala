@@ -25,7 +25,11 @@ sealed trait BuildMessage
 
 object BuildMessages {
 
-  case class Output(stream: String) extends BuildMessage
+  case class Output(stream: String) extends BuildMessage {
+    def text = stream.trim
+
+    override def toString: String = s"Output($text)"
+  }
 
   case class Error(error: String, errorDetail: ErrorDetail) extends BuildMessage
 
