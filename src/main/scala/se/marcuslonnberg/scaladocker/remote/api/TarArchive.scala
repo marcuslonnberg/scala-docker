@@ -8,32 +8,12 @@ import scala.annotation.tailrec
 
 object TarArchive {
   def apply(inDir: File, out: File): File = {
-    require(inDir.isDirectory, "inDir must be a directory")
-
-    def traverse(directory: File, dirPath: String = ""): Map[String, File] = {
-      val files = directory.listFiles() match {
-        case null =>
-          Map.empty[String, File]
-        case files =>
-          val nextPath = dirPath + directory.getName + "/"
-          files.flatMap { file =>
-            val path = dirPath + file.getName
-            if (file.isDirectory) {
-              traverse(file, nextPath)
-            } else {
-              Map(path -> file)
-            }
-          }.toMap
-      }
-      files + ((dirPath + directory.getName) -> directory)
-    }
-
-    val files = traverse(inDir)
+    val files = FileUtils.listFilesRecursive(inDir)
     apply(files, out)
   }
 
   def apply(files: Map[String, File], outFile: File): File = {
-    val entries = files.map {
+    val entries = files.toSeq.sortBy(_._1).map {
       case (path, file) =>
         createEntry(path, file)
     }
@@ -65,8 +45,9 @@ object TarArchive {
     entries.foreach { entry =>
       tarStream.putNextEntry(entry)
 
-      if (entry.getFile.isFile)
+      if (entry.getFile.isFile) {
         copyFile(entry.getFile)
+      }
 
       tarStream.flush()
     }
@@ -81,6 +62,8 @@ object TarArchive {
     entry.setUserName("")
     entry.setGroupName("")
     entry.setIds(0, 0)
+
+    entry.getHeader.mode = FileUtils.filePermissions(file)
     entry
   }
 }
