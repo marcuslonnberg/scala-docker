@@ -6,5 +6,7 @@ jdk:
   - oraclejdk7
   - openjdk7
 script:
+  # Docker does not exist on Travis, set a dummy value since suites uses a DockerClient that requires DOCKER_HOST to be set.
+  - export DOCKER_HOST=tcp://nodocker:2375
   - sbt ++$TRAVIS_SCALA_VERSION "testOnly -- -l se.marcuslonnberg.scaladocker.RemoteApiTest"
 sudo: false
