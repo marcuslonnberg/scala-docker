@@ -5,10 +5,11 @@ import java.io.File
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Sink, Source}
 import akka.testkit.TestKit
+import se.marcuslonnberg.scaladocker.RemoteApiTest
 import se.marcuslonnberg.scaladocker.remote.models.{BuildMessages, ImageName}
 
 class BuildImageApiSpec extends TestKit(ActorSystem("build-image-api")) with ApiSpec {
-  "Build image API" should "run commands from the Dockerfile in the root of the tar archive" in {
+  "Build image API" should "run commands from the Dockerfile in the root of the tar archive" taggedAs RemoteApiTest in {
     val imageName = ImageName("scaladocker/image-build-only-dockerfile")
 
     val tarArchive = TarArchive(
@@ -24,7 +25,7 @@ class BuildImageApiSpec extends TestKit(ActorSystem("build-image-api")) with Api
     future.futureValue shouldEqual true
   }
 
-  it should "build a Dockerimage with files" in {
+  it should "build a Dockerimage with files" taggedAs RemoteApiTest in {
     val imageName = ImageName("scaladocker/image-build-simple")
 
     val tarArchive = TarArchive(

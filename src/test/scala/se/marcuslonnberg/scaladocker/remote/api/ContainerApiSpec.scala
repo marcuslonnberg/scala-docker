@@ -2,12 +2,13 @@ package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
+import se.marcuslonnberg.scaladocker.RemoteApiTest
 import se.marcuslonnberg.scaladocker.remote.models._
 
 class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpec {
   val busybox = ImageName("busybox")
 
-  "Container API" should "list containers" in {
+  "Container API" should "list containers" taggedAs RemoteApiTest in {
     val containerId = client.runLocal(ContainerConfig(busybox, cmd = List("ls", "/")), HostConfig()).futureValue
 
     val containers = client.containers.list(all = true).futureValue
@@ -18,7 +19,7 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpe
     }
   }
 
-  it should "get info about a container" in {
+  it should "get info about a container" taggedAs RemoteApiTest in {
     val containerId = client.runLocal(ContainerConfig(busybox, cmd = List("ls", "/")), HostConfig()).futureValue
 
     val container = client.containers.get(containerId).futureValue
@@ -30,13 +31,13 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpe
     container.config.image shouldEqual busybox
   }
 
-  it should "fail when creating a container with an image that does not exist" in {
+  it should "fail when creating a container with an image that does not exist" taggedAs RemoteApiTest in {
     val eventualResponse = client.containers.create(ContainerConfig(ImageName("undefined-image")))
 
     eventualResponse.failed.futureValue shouldBe an[ImageNotFoundException]
   }
 
-  it should "start a container" in {
+  it should "start a container" taggedAs RemoteApiTest in {
     val createId = client.containers.create(ContainerConfig(busybox)).futureValue.id
 
     val hostConfig = HostConfig(publishAllPorts = true)
@@ -49,7 +50,7 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpe
     info.hostConfig.publishAllPorts shouldEqual true
   }
 
-  it should "create, get and delete a container by name" in {
+  it should "create, get and delete a container by name" taggedAs RemoteApiTest in {
     val name = ContainerName("scala-container-name")
 
     client.containers.delete(name).eitherValue

@@ -3,6 +3,7 @@ package se.marcuslonnberg.scaladocker.remote.api
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Sink, Source}
 import akka.testkit.TestKit
+import se.marcuslonnberg.scaladocker.RemoteApiTest
 import se.marcuslonnberg.scaladocker.remote.models.{CreateImageMessages, ImageName}
 
 class ImageApiSpec extends TestKit(ActorSystem("image-api")) with ApiSpec {
@@ -22,11 +23,11 @@ class ImageApiSpec extends TestKit(ActorSystem("image-api")) with ApiSpec {
     client.images.delete(imageNameNewTag).futureValue
   }
 
-  "Image API" should "list images" in {
+  "Image API" should "list images" taggedAs RemoteApiTest in {
     currentImageNames() should contain(imageName)
   }
 
-  it should "create (pull) an image" in {
+  it should "create (pull) an image" taggedAs RemoteApiTest in {
     pending
     val imageName = ImageName("busybox:latest")
     val createStream = client.images.create(imageName)
@@ -39,7 +40,7 @@ class ImageApiSpec extends TestKit(ActorSystem("image-api")) with ApiSpec {
     future.futureValue shouldEqual true
   }
 
-  it should "tag an image" in {
+  it should "tag an image" taggedAs RemoteApiTest in {
     currentImageNames() should contain(imageName)
 
     client.images.tag(imageName, imageNameNewTag).futureValue shouldBe true
@@ -47,7 +48,7 @@ class ImageApiSpec extends TestKit(ActorSystem("image-api")) with ApiSpec {
     currentImageNames() should contain allOf(imageName, imageNameNewTag)
   }
 
-  it should "delete an image" in {
+  it should "delete an image" taggedAs RemoteApiTest in {
     currentImageNames() should contain(imageNameDelete)
 
     client.images.delete(imageNameDelete).futureValue shouldBe true

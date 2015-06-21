@@ -1,9 +1,9 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorFlowMaterializerSettings, ActorFlowMaterializer}
-import org.scalatest.{Inspectors, FlatSpecLike, Matchers, BeforeAndAfterAll}
-import org.scalatest.concurrent.{ScalaFutures, IntegrationPatience}
+import akka.stream.{ActorFlowMaterializer, ActorFlowMaterializerSettings}
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Inspectors, Matchers}
 
 trait ApiSpec extends FlatSpecLike with Matchers with ScalaFutures with BeforeAndAfterAll with IntegrationPatience with Inspectors {
   implicit def system: ActorSystem
