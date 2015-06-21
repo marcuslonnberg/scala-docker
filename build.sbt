@@ -38,5 +38,5 @@ pomExtra := {
 
 useGpg := true
 
-releaseSettings
-publishArtifactsAction <<= PgpKeys.publishSigned
+releaseCrossBuild := true
+releasePublishArtifactsAction <<= PgpKeys.publishSigned
