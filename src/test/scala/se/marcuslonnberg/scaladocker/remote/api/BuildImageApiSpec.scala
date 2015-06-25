@@ -16,7 +16,7 @@ class BuildImageApiSpec extends TestKit(ActorSystem("build-image-api")) with Api
       inDir = new File(getClass.getResource("build-image-only-dockerfile").getFile),
       out = File.createTempFile("build-image-only-dockerfile", ".tar"))
 
-    val buildOutput = client.images.build(imageName, tarArchive)
+    val buildOutput = client.images.build(tarArchive, Some(imageName))
 
     val future = Source(buildOutput).collect {
       case BuildMessages.Output(out) if out.contains("yippee ki yay") => true
@@ -26,13 +26,11 @@ class BuildImageApiSpec extends TestKit(ActorSystem("build-image-api")) with Api
   }
 
   it should "build a Dockerimage with files" taggedAs RemoteApiTest in {
-    val imageName = ImageName("scaladocker/image-build-simple")
-
     val tarArchive = TarArchive(
       inDir = new File(getClass.getResource("build-image-simple").getFile),
       out = File.createTempFile("build-image-simple", ".tar"))
 
-    val buildOutput = client.images.build(imageName, tarArchive, noCache = true)
+    val buildOutput = client.images.build(tarArchive, noCache = true)
 
     val future = Source(buildOutput).collect {
       case BuildMessages.Output(out) if out.contains("script") && out.contains("text") => true

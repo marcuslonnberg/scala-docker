@@ -10,11 +10,12 @@ import se.marcuslonnberg.scaladocker.remote.models.json._
 import se.marcuslonnberg.scaladocker.remote.models.{BuildMessage, ImageName}
 
 trait BuildCommand extends DockerCommands {
-  def build(imageName: ImageName, tarFile: File, noCache: Boolean = false, rm: Boolean = true): Publisher[BuildMessage] = {
-    val query = Uri.Query(
-      "t" -> imageName.toString,
-      "nocache" -> noCache.toString,
-      "rm" -> rm.toString)
+  def build(tarFile: File, imageName: Option[ImageName] = None, noCache: Boolean = false, rm: Boolean = true): Publisher[BuildMessage] = {
+    val query = Uri.Query(Map(
+      "t" -> imageName.map(_.toString),
+      "nocache" -> Some(noCache.toString),
+      "rm" -> Some(rm.toString))
+      .collect { case (key, Some(value)) => key -> value })
     val uri = createUri(Path / "build", query)
 
     val entity = HttpEntity(ContentType(MediaTypes.`application/x-tar`), readBytes(tarFile))
