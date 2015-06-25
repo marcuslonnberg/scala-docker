@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.FromResponseUnmarshaller
 import akka.http.scaladsl.{Http, HttpsContext}
-import akka.stream.FlowMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl._
 import akka.util.Timeout
 import org.reactivestreams.Publisher
@@ -34,7 +34,7 @@ trait DockerPipeline extends PlayJsonSupport with TlsSupport {
     query: Uri.Query = Uri.Query.Empty
   )(implicit system: ActorSystem,
     executionContext: ExecutionContext,
-    materializer: FlowMaterializer
+    materializer: Materializer
   ): Future[HttpResponse] = {
     val uri = createUri(path, query)
     sendRequest(HttpRequest(HttpMethods.GET, uri))
@@ -46,7 +46,7 @@ trait DockerPipeline extends PlayJsonSupport with TlsSupport {
     content: F
   )(implicit system: ActorSystem,
     marshaller: Marshaller[F, RequestEntity],
-    materializer: FlowMaterializer
+    materializer: Materializer
   ): Future[HttpResponse] = {
     import system.dispatcher
     val uri = createUri(path, query)
@@ -78,7 +78,7 @@ trait DockerPipeline extends PlayJsonSupport with TlsSupport {
     executionContext: ExecutionContext,
     writer: Writes[T],
     unmarshaller: FromResponseUnmarshaller[T],
-    materializer: FlowMaterializer
+    materializer: Materializer
   ): Future[T] = {
     sendRequest(httpRequest).flatMap { response =>
       unmarshaller(response)
@@ -89,7 +89,7 @@ trait DockerPipeline extends PlayJsonSupport with TlsSupport {
     request: HttpRequest
   )(implicit
     system: ActorSystem,
-    materializer: FlowMaterializer,
+    materializer: Materializer,
     timeout: Timeout = Timeout(30.seconds)
   ): Future[HttpResponse] = {
     val connection = {
@@ -112,7 +112,7 @@ trait DockerPipeline extends PlayJsonSupport with TlsSupport {
     httpRequest: HttpRequest
   )(implicit
     system: ActorSystem,
-    materializer: FlowMaterializer
+    materializer: Materializer
   ): Publisher[String] = {
     val eventualResponse = sendRequest(httpRequest)
 
@@ -135,7 +135,7 @@ trait DockerPipeline extends PlayJsonSupport with TlsSupport {
     httpRequest: HttpRequest
   )(implicit
     system: ActorSystem,
-    materializer: FlowMaterializer,
+    materializer: Materializer,
     reader: Reads[T]
   ): Publisher[T] = {
     val eventualResponse = sendRequest(httpRequest)

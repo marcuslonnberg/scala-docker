@@ -10,7 +10,7 @@ import se.marcuslonnberg.scaladocker.remote.models._
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 object DockerClient {
-  def apply()(implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient = {
+  def apply()(implicit system: ActorSystem, materializer: Materializer): DockerClient = {
     def env(key: String): Option[String] = sys.env.get(key).filter(_.nonEmpty)
 
     val host = env("DOCKER_HOST").getOrElse {
@@ -24,12 +24,12 @@ object DockerClient {
   }
 
   def apply(host: String, port: Int = 2375, tls: Option[Tls] = None, auths: Seq[RegistryAuth] = Seq.empty)
-      (implicit system: ActorSystem, materializer: FlowMaterializer): DockerClient = {
+      (implicit system: ActorSystem, materializer: Materializer): DockerClient = {
     apply(Uri(s"http://$host:$port"), tls, auths)
   }
 }
 
-case class DockerClient(baseUri: Uri, tls: Option[Tls], auths: Seq[RegistryAuth])(implicit system: ActorSystem, materializer: FlowMaterializer) {
+case class DockerClient(baseUri: Uri, tls: Option[Tls], auths: Seq[RegistryAuth])(implicit system: ActorSystem, materializer: Materializer) {
   val containers: ContainerCommands = new ContainerCommands with Context
   val host: HostCommands = new HostCommands with Context
   val images: ImageCommands with BuildCommand = new ImageCommands with BuildCommand with Context {
@@ -44,7 +44,7 @@ case class DockerClient(baseUri: Uri, tls: Option[Tls], auths: Seq[RegistryAuth]
 
     private[api] implicit def system: ActorSystem = DockerClient.this.system
 
-    private[api] implicit def materializer: FlowMaterializer = DockerClient.this.materializer
+    private[api] implicit def materializer: Materializer = DockerClient.this.materializer
 
     private[api] implicit def dispatcher: ExecutionContextExecutor = system.dispatcher
   }
@@ -55,7 +55,7 @@ case class DockerClient(baseUri: Uri, tls: Option[Tls], auths: Seq[RegistryAuth]
     containerConfig: ContainerConfig,
     hostConfig: HostConfig = HostConfig(),
     name: Option[ContainerName] = None
-  )(implicit materializer: FlowMaterializer): Future[ContainerId] = {
+  )(implicit materializer: Materializer): Future[ContainerId] = {
     runLocal(containerConfig, hostConfig, name).recoverWith {
       case _: ImageNotFoundException =>
         val create = images.create(containerConfig.image)
@@ -87,7 +87,7 @@ case class DockerClient(baseUri: Uri, tls: Option[Tls], auths: Seq[RegistryAuth]
 trait DockerCommands extends DockerPipeline {
   private[api] implicit def system: ActorSystem
 
-  private[api] implicit def materializer: FlowMaterializer
+  private[api] implicit def materializer: Materializer
 
   private[api] implicit def dispatcher: ExecutionContext
 
