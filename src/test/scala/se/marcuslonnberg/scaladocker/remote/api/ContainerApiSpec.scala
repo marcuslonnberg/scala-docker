@@ -1,6 +1,7 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
+import akka.stream.scaladsl.{Sink, Source}
 import akka.testkit.TestKit
 import se.marcuslonnberg.scaladocker.RemoteApiTest
 import se.marcuslonnberg.scaladocker.remote.models._
@@ -61,5 +62,19 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpe
     info.name shouldEqual "/scala-container-name"
 
     client.containers.delete(name).futureValue shouldEqual name
+  }
+
+  it should "run a container with environment variables" taggedAs RemoteApiTest in {
+    val containerId = client.runLocal(ContainerConfig(busybox, env = Seq("KEY=VALUE"), cmd = List("/bin/sh", "-c", "echo $KEY")), HostConfig()).futureValue
+
+    val logStream = Source(client.containers.logs(containerId, follow = true))
+
+    val eventualResult = logStream.collect {
+      case "VALUE\n" => true
+    }.runWith(Sink.head)
+
+    eventualResult.futureValue shouldEqual true
+
+    client.containers.delete(containerId).futureValue shouldEqual containerId
   }
 }
