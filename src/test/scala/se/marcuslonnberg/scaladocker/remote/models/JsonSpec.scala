@@ -65,15 +65,15 @@ class JsonSpec extends FlatSpec with Matchers {
   }
 
   "Volume bindings" should "be serializable and deserializable" in {
-    def test(volume: Volume, string: String) = {
+    def test(volume: VolumeBinding, string: String) = {
       val jsString = JsString(string)
       Json.toJson(volume) shouldEqual jsString
-      jsString.as[Volume] shouldEqual volume
+      jsString.as[VolumeBinding] shouldEqual volume
     }
 
-    test(Volume(hostPath = "/a", containerPath = "/b", rw = true), "/a:/b")
-    test(Volume(hostPath = "/a", containerPath = "/b", rw = false), "/a:/b:ro")
-    test(Volume(hostPath = "/a/b/c/d/", containerPath = "/e/f/g/h/", rw = true), "/a/b/c/d/:/e/f/g/h/")
+    test(VolumeBinding(hostPath = "/a", containerPath = "/b", rw = true), "/a:/b")
+    test(VolumeBinding(hostPath = "/a", containerPath = "/b", rw = false), "/a:/b:ro")
+    test(VolumeBinding(hostPath = "/a/b/c/d/", containerPath = "/e/f/g/h/", rw = true), "/a/b/c/d/:/e/f/g/h/")
   }
 
   def readResourcePlay(path: String) = {

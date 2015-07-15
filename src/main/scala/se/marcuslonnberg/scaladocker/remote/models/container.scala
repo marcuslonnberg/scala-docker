@@ -215,38 +215,97 @@ case class ContainerLink(containerName: String, aliasName: Option[String] = None
 }
 
 /**
- * @param binds Volume bindings.
- * @param lxcConfig LXC specific configurations.
- * @param privileged Gives the container full access to the host.
+ * Host configuration for a container.
+ *
  * @param portBindings A map of exposed container ports to bindings on the host.
- * @param links Container links.
  * @param publishAllPorts Allocate a random port for each exposed container port.
- * @param readonlyRootFilesystem Mount the container's root filesystem as read only.
- * @param dnsServers DNS servers for the container to use.
- * @param dnsSearchDomains DNS search domains.
+ * @param links Container links.
+ * @param volumeBindings Volume bindings.
  * @param volumesFrom Volumes to inherit from other containers.
  * @param devices Devices to add to the container.
+ * @param readOnlyRootFilesystem Mount the container's root filesystem as read only.
+ * @param dnsServers DNS servers for the container to use.
+ * @param dnsSearchDomains DNS search domains.
  * @param networkMode Networking mode for the container
- * @param capAdd Kernel capabilities to add to the container
- * @param capDrop Kernel capabilities to drop from the container.
+ * @param privileged Gives the container full access to the host.
+ * @param capabilities Change Linux kernel capabilities for the container.
  * @param restartPolicy Behavior to apply when the container exits.
  */
 case class HostConfig(
-  binds: Seq[Volume] = Seq.empty,
-  lxcConfig: Seq[String] = Seq.empty,
-  privileged: Boolean = false,
   portBindings: Map[Port, Seq[PortBinding]] = Map.empty,
-  links: Seq[ContainerLink] = Seq.empty,
   publishAllPorts: Boolean = false,
-  readonlyRootFilesystem: Boolean = false,
-  dnsServers: Seq[String] = Seq.empty,
-  dnsSearchDomains: Seq[String] = Seq.empty,
+  links: Seq[ContainerLink] = Seq.empty,
+  volumeBindings: Seq[VolumeBinding] = Seq.empty,
   volumesFrom: Seq[String] = Seq.empty,
   devices: Seq[DeviceMapping] = Seq.empty,
+  readOnlyRootFilesystem: Boolean = false,
+  dnsServers: Seq[String] = Seq.empty,
+  dnsSearchDomains: Seq[String] = Seq.empty,
   networkMode: Option[String] = None,
-  capAdd: Seq[String] = Seq.empty,
-  capDrop: Seq[String] = Seq.empty,
+  privileged: Boolean = false,
+  capabilities: LinuxCapabilities = LinuxCapabilities(),
   restartPolicy: RestartPolicy = NeverRestart
+) {
+  def withPortBindings(ports: (Port, Seq[PortBinding])*) = {
+    copy(portBindings = Map(ports: _*))
+  }
+
+  def withPublishAllPorts(publishAll: Boolean) = {
+    copy(publishAllPorts = publishAll)
+  }
+
+  def withLinks(links: ContainerLink*) = {
+    copy(links = links)
+  }
+
+  def withVolumeBindings(volumeBindings: VolumeBinding*) = {
+    copy(volumeBindings = volumeBindings)
+  }
+
+  def withVolumesFrom(containers: String*) = {
+    copy(volumesFrom = containers)
+  }
+
+  def withDevices(devices: DeviceMapping*) = {
+    copy(devices = devices)
+  }
+
+  def withReadOnlyRootFilesystem(readOnlyRootFilesystem: Boolean) = {
+    copy(readOnlyRootFilesystem = readOnlyRootFilesystem)
+  }
+
+  def withDnsServers(servers: String*) = {
+    copy(dnsServers = servers)
+  }
+
+  def withDnsSearchDomains(searchDomains: String*) = {
+    copy(dnsSearchDomains = searchDomains)
+  }
+
+  def withNetworkMode(mode: String) = {
+    copy(networkMode = Option(mode))
+  }
+
+  def withPrivileged(privileged: Boolean) = {
+    copy(privileged = privileged)
+  }
+
+  def withCapabilities(capabilities: LinuxCapabilities) = {
+    copy(capabilities = capabilities)
+  }
+
+  def withRestartPolicy(restartPolicy: RestartPolicy) = {
+    copy(restartPolicy = restartPolicy)
+  }
+}
+
+/**
+ * @param add Kernel capabilities to add to the container
+ * @param drop Kernel capabilities to drop from the container.
+ */
+case class LinuxCapabilities(
+  add: Seq[String] = Seq.empty,
+  drop: Seq[String] = Seq.empty
 )
 
 trait RestartPolicy {
@@ -308,11 +367,24 @@ case class ContainerInfo(
   execDriver: String,
   mountLabel: Option[String] = None,
   processLabel: Option[String] = None,
-  volumes: Seq[Volume] = Seq.empty,
+  volumes: Seq[VolumeBinding] = Seq.empty,
   hostConfig: HostConfig
 )
 
-case class Volume(
+object VolumeBinding {
+  def unapply(binding: String): Option[VolumeBinding] = {
+    binding.split(":") match {
+      case Array(host, container) =>
+        Some(VolumeBinding(host, container, rw = true))
+      case Array(host, container, "ro") =>
+        Some(VolumeBinding(host, container, rw = false))
+      case _ =>
+        None
+    }
+  }
+}
+
+case class VolumeBinding(
   hostPath: String,
   containerPath: String,
   rw: Boolean = true

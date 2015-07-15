@@ -19,16 +19,12 @@ trait ContainerFormats extends CommonFormats {
       )(ContainerStatus.apply, unlift(ContainerStatus.unapply))
   }
 
-  implicit val volumeBindingFormat = Format[Volume](Reads { in =>
-    in.validate[String].flatMap { binding =>
-      binding.split(":") match {
-        case Array(host, container) =>
-          JsSuccess(Volume(host, container, rw = true))
-        case Array(host, container, readOnly) =>
-          JsSuccess(Volume(host, container, readOnly != "ro"))
-        case _ =>
-          JsError(s"Could not parse binding: $binding")
-      }
+  implicit val volumeBindingFormat = Format[VolumeBinding](Reads { in =>
+    in.validate[String].flatMap {
+      case VolumeBinding(binding) =>
+        JsSuccess(binding)
+      case binding =>
+        JsError(s"Could not parse binding: $binding")
     }
   }, Writes { volume =>
     val maybeRw = if (volume.rw) None else Some("ro")
@@ -99,21 +95,24 @@ trait ContainerFormats extends CommonFormats {
 
   implicit val deviceMappingFormat = JsonUtils.upperCamelCase(Json.format[DeviceMapping])
 
+  implicit val capabilitiesConfigFormat: OFormat[LinuxCapabilities] =
+    ((JsPath \ "CapAdd").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "CapDrop").formatWithDefault[Seq[String]](Seq.empty)
+      )(LinuxCapabilities.apply, unlift(LinuxCapabilities.unapply))
+
   implicit val hostConfigFormat: Format[HostConfig] =
-    ((JsPath \ "Binds").formatWithDefault[Seq[Volume]](Seq.empty) and
-      (JsPath \ "LxcConf").formatWithDefault[Seq[String]](Seq.empty) and
-      (JsPath \ "Privileged").formatWithDefault[Boolean](false) and
-      (JsPath \ "PortBindings").formatWithDefault[Map[Port, Seq[PortBinding]]](Map.empty)(portBindingsObjectFormat) and
-      (JsPath \ "Links").formatWithDefault[Seq[ContainerLink]](Seq.empty) and
+    ((JsPath \ "PortBindings").formatWithDefault[Map[Port, Seq[PortBinding]]](Map.empty)(portBindingsObjectFormat) and
       (JsPath \ "PublishAllPorts").formatWithDefault[Boolean](false) and
+      (JsPath \ "Links").formatWithDefault[Seq[ContainerLink]](Seq.empty) and
+      (JsPath \ "Binds").formatWithDefault[Seq[VolumeBinding]](Seq.empty) and
+      (JsPath \ "VolumesFrom").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "Devices").formatWithDefault[Seq[DeviceMapping]](Seq.empty) and
       (JsPath \ "ReadonlyRootfs").formatWithDefault[Boolean](false) and
       (JsPath \ "Dns").formatWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "DnsSearch").formatWithDefault[Seq[String]](Seq.empty) and
-      (JsPath \ "VolumesFrom").formatWithDefault[Seq[String]](Seq.empty) and
-      (JsPath \ "Devices").formatWithDefault[Seq[DeviceMapping]](Seq.empty) and
       (JsPath \ "NetworkMode").formatNullable[String].inmap[Option[String]](_.filter(_.nonEmpty), identity) and
-      (JsPath \ "CapAdd").formatWithDefault[Seq[String]](Seq.empty) and
-      (JsPath \ "CapDrop").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "Privileged").formatWithDefault[Boolean](false) and
+      capabilitiesConfigFormat and
       (JsPath \ "RestartPolicy").formatWithDefault[RestartPolicy](NeverRestart)
       )(HostConfig.apply, unlift(HostConfig.unapply))
 
@@ -137,14 +136,14 @@ trait ContainerFormats extends CommonFormats {
       )(NetworkSettings.apply, unlift(NetworkSettings.unapply))
 
   implicit val containerInfoFormat: Format[ContainerInfo] = {
-    val volumesFormat: OFormat[Seq[Volume]] =
+    val volumesFormat: OFormat[Seq[VolumeBinding]] =
       ((JsPath \ "Volumes").format[Map[String, String]] and
         (JsPath \ "VolumesRW").format[Map[String, Boolean]]
         )({ (volumes, volumesRw) =>
         volumes.map {
           case (containerPath, hostPath) =>
             val rw = volumesRw.getOrElse(containerPath, false)
-            Volume(hostPath, containerPath, rw)
+            VolumeBinding(hostPath, containerPath, rw)
         }.toSeq
       }, { volumes =>
         val v = volumes.map(v => v.containerPath -> v.hostPath).toMap
