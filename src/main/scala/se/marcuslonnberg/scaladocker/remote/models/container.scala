@@ -67,36 +67,104 @@ case class PortBinding(hostIp: String = "0.0.0.0", hostPort: Int)
  * Configuration for a container.
  *
  * @param image Image to run.
- * @param hostname Container hostname.
- * @param domainName Container domain name.
- * @param user Username or UID.
- * @param resourceLimits Resource limits.
- * @param standardStreams Configuration for standard streams.
+ * @param entryPoint Entry point for the container.
+ * @param command Command to run.
+ * @param environmentVariables Environment variables.
  * @param exposedPorts Ports that the container should expose.
- * @param env Environment variables.
- * @param cmd Command to run.
  * @param volumes Paths inside the container that should be exposed.
  * @param workingDir Working directory for commands to run in.
- * @param entryPoint Entry point for the container.
+ * @param user Username or UID.
+ * @param hostname Container hostname.
+ * @param domainName Container domain name.
+ * @param resourceLimits Resource limits.
+ * @param standardStreams Configuration for standard streams.
+ * @param labels Labels for the container.
  * @param networkDisabled Disable network for the container.
  */
 case class ContainerConfig(
   image: ImageName,
-  hostname: Option[String] = None,
-  domainName: Option[String] = None,
-  user: Option[String] = None,
-  resourceLimits: ContainerResourceLimits = ContainerResourceLimits(),
-  standardStreams: StandardStreamsConfig = StandardStreamsConfig(),
+  entryPoint: Option[Seq[String]] = None,
+  command: Seq[String] = Seq.empty,
+  environmentVariables: Seq[String] = Seq.empty,
   exposedPorts: Seq[Port] = Seq.empty,
-  env: Seq[String] = Seq.empty,
-  cmd: Seq[String] = Seq.empty,
   volumes: Seq[String] = Seq.empty,
   workingDir: Option[String] = None,
-  entryPoint: Option[Seq[String]] = None,
+  user: Option[String] = None,
+  hostname: Option[String] = None,
+  domainName: Option[String] = None,
+  resourceLimits: ContainerResourceLimits = ContainerResourceLimits(),
+  standardStreams: StandardStreamsConfig = StandardStreamsConfig(),
   labels: Map[String, String] = Map.empty,
-  networkDisabled: Boolean = false,
-  onBuild: Seq[String] = Seq.empty
-)
+  networkDisabled: Boolean = false
+) {
+  def withImage(image: ImageName) = {
+    copy(image = image)
+  }
+
+  def withEntryPoint(args: String*) = {
+    copy(entryPoint = Some(args))
+  }
+
+  def withCommand(args: String*) = {
+    copy(command = args)
+  }
+
+  def withEnvironmentVariables(pairs: (String, String)*) = {
+    copy(environmentVariables = pairs.map {
+      case (key, value) => s"$key=$value"
+    })
+  }
+
+  def environmentVariablesMap: Map[String, String] = {
+    environmentVariables.map { str =>
+      str.split("=", 2) match {
+        case Array(key, value) => key -> value
+        case _ => str -> ""
+      }
+    }.toMap
+  }
+
+  def withExposedPorts(ports: Port*) = {
+    copy(exposedPorts = ports)
+  }
+
+  def withVolumes(args: String*) = {
+    copy(volumes = args)
+  }
+
+  def withWorkingDir(workingDir: String) = {
+    copy(workingDir = Option(workingDir).filter(_.nonEmpty))
+  }
+
+  def withUser(user: String) = {
+    copy(user = Option(user).filter(_.nonEmpty))
+  }
+
+  def withHostname(hostname: String) = {
+    copy(hostname = Option(hostname).filter(_.nonEmpty))
+  }
+
+  def withDomainName(domainName: String) = {
+    copy(domainName = Option(domainName).filter(_.nonEmpty))
+  }
+
+  def withResourceLimits(resourceLimits: ContainerResourceLimits) = {
+    copy(resourceLimits = resourceLimits)
+  }
+
+  def withStandardStreams(standardStreams: StandardStreamsConfig) = {
+    copy(standardStreams = standardStreams)
+  }
+
+  def withLabels(labels: (String, String)*) = {
+    copy(labels = Map(labels: _*))
+  }
+
+  def withNetworkDisabled(disabled: Boolean) = {
+    copy(networkDisabled = disabled)
+  }
+
+}
 
 /**
  * Configuration options for standard streams.

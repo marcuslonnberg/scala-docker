@@ -53,21 +53,20 @@ trait ContainerFormats extends CommonFormats {
 
   implicit val containerConfigFormat: Format[ContainerConfig] =
     ((JsPath \ "Image").format[ImageName] and
-      (JsPath \ "Hostname").formatNullable[String] and
-      (JsPath \ "DomainName").formatNullable[String] and
-      (JsPath \ "User").formatNullable[String] and
-      containerResourceLimitsFormat and
-      standardStreamsConfigFormat and
-      (JsPath \ "ExposedPorts").formatWithDefault[Seq[Port]](Seq.empty) and
-      (JsPath \ "Env").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "Entrypoint").formatNullable[Seq[String]] and
       (JsPath \ "Cmd").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "Env").formatWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "ExposedPorts").formatWithDefault[Seq[Port]](Seq.empty) and
       (JsPath \ "Volumes").formatWithDefault[Map[String, JsObject]](Map.empty)
         .inmap[Seq[String]](_.keys.toSeq, _.map(_ -> JsObject(Seq.empty)).toMap) and
       (JsPath \ "WorkingDir").formatNullable[String] and
-      (JsPath \ "Entrypoint").formatNullable[Seq[String]] and
+      (JsPath \ "User").formatNullable[String] and
+      (JsPath \ "Hostname").formatNullable[String] and
+      (JsPath \ "DomainName").formatNullable[String] and
+      containerResourceLimitsFormat and
+      standardStreamsConfigFormat and
       (JsPath \ "Labels").formatWithDefault[Map[String, String]](Map.empty) and
-      (JsPath \ "NetworkDisabled").formatWithDefault[Boolean](false) and
-      (JsPath \ "OnBuild").formatWithDefault[Seq[String]](Seq.empty)
+      (JsPath \ "NetworkDisabled").formatWithDefault[Boolean](false)
       )(ContainerConfig.apply, unlift(ContainerConfig.unapply))
 
   implicit val restartPolicyFormat = Format[RestartPolicy](Reads { in =>

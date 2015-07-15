@@ -10,7 +10,7 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpe
   val busybox = ImageName("busybox")
 
   "Container API" should "list containers" taggedAs RemoteApiTest in {
-    val containerId = client.runLocal(ContainerConfig(busybox, cmd = List("ls", "/")), HostConfig()).futureValue
+    val containerId = client.runLocal(ContainerConfig(busybox, command = List("ls", "/")), HostConfig()).futureValue
 
     val containers = client.containers.list(all = true).futureValue
 
@@ -21,7 +21,7 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpe
   }
 
   it should "get info about a container" taggedAs RemoteApiTest in {
-    val containerId = client.runLocal(ContainerConfig(busybox, cmd = List("ls", "/")), HostConfig()).futureValue
+    val containerId = client.runLocal(ContainerConfig(busybox, command = List("ls", "/")), HostConfig()).futureValue
 
     val container = client.containers.get(containerId).futureValue
 
@@ -65,7 +65,10 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpe
   }
 
   it should "run a container with environment variables" taggedAs RemoteApiTest in {
-    val containerId = client.runLocal(ContainerConfig(busybox, env = Seq("KEY=VALUE"), cmd = List("/bin/sh", "-c", "echo $KEY")), HostConfig()).futureValue
+    val containerConfig = ContainerConfig(busybox)
+      .withEnvironmentVariables("KEY" -> "VALUE")
+      .withCommand("/bin/sh", "-c", "echo $KEY")
+    val containerId = client.runLocal(containerConfig, HostConfig()).futureValue
 
     val logStream = Source(client.containers.logs(containerId, follow = true))
 
