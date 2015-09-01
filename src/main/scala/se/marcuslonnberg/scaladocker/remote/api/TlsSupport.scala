@@ -8,21 +8,21 @@ import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 
 import org.apache.commons.ssl.PKCS8Key
 
-object Tls {
+object TlsConfig {
   def fromDir(dir: String) = {
     val caCert = {
       val caFile = new File(dir, "ca.pem")
       if (caFile.isFile) Some(caFile.getPath)
       else None
     }
-    Tls(cert = dir + "/cert.pem", key = dir + "/key.pem", caCert = caCert)
+    TlsConfig(cert = dir + "/cert.pem", key = dir + "/key.pem", caCert = caCert)
   }
 }
 
-case class Tls(cert: String, key: String, caCert: Option[String] = None)
+case class TlsConfig(cert: String, key: String, caCert: Option[String] = None)
 
 trait TlsSupport {
-  private[api] def createSSLContext(tls: Tls): SSLContext = {
+  protected def createSSLContext(tls: TlsConfig): SSLContext = {
     val algorithm = "SunX509"
     val protocol = "TLSv1"
     val emptyPassword = "".toCharArray
@@ -56,7 +56,7 @@ trait TlsSupport {
     context
   }
 
-  private[api] def readCert(certificateFilename: String): Array[Certificate] = {
+  protected def readCert(certificateFilename: String): Array[Certificate] = {
     val certificateStream = new FileInputStream(certificateFilename)
     val certificateFactory = CertificateFactory.getInstance("X.509")
     val certs = certificateFactory.generateCertificates(certificateStream)
@@ -67,7 +67,7 @@ trait TlsSupport {
     chain
   }
 
-  private[api] def readPrivateKey(privateKeyFilename: String): PrivateKey = {
+  protected def readPrivateKey(privateKeyFilename: String): PrivateKey = {
     val fileStream = new FileInputStream(privateKeyFilename)
     val key = new PKCS8Key(fileStream, null)
     val encodedKey = key.getDecryptedBytes

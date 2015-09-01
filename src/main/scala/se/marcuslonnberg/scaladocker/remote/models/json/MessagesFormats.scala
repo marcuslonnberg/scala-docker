@@ -5,7 +5,7 @@ import play.api.libs.json._
 import se.marcuslonnberg.scaladocker.remote.models._
 import se.marcuslonnberg.scaladocker.remote.models.json.JsonUtils._
 
-trait MessagesFormats extends CommonFormats with CreateImageMessageFormats with BuildMessageFormat {
+trait MessagesFormats extends CommonFormats with CreateImageMessageFormats with BuildMessageFormat with RemoveImageMessageFormats {
   implicit val createContainerResponseJson =
     ((JsPath \ "Id").format[ContainerHashId] and
       (JsPath \ "Warnings").formatWithDefault[Seq[String]](Seq.empty)
@@ -32,7 +32,7 @@ trait BuildMessageFormat extends CommonFormats {
 
 trait CreateImageMessageFormats extends CommonFormats {
 
-  import se.marcuslonnberg.scaladocker.remote.models.CreateImageMessages._
+  import se.marcuslonnberg.scaladocker.remote.models.ImageTransferMessage._
 
   implicit val createImageMessageStatusFormat = JsonUtils.upperCamelCase(Json.format[Status])
   implicit val createImageMessageImageStatusFormat = JsonUtils.upperCamelCase(Json.format[ImageStatus])
@@ -40,15 +40,33 @@ trait CreateImageMessageFormats extends CommonFormats {
   implicit val createImageMessageProgressFormat = JsonUtils.upperCamelCase(Json.format[Progress])
   implicit val createImageMessageErrorFormat = JsonUtils.upperCamelCase(Json.format[Error])
 
-  implicit val createImageMessageFormat: Format[CreateImageMessage] = Format(Reads { in =>
+  implicit val createImageMessageFormat: Format[ImageTransferMessage] = Format(Reads { in =>
     createImageMessageProgressFormat.reads(in)
       .or(createImageMessageErrorFormat.reads(in))
       .or(createImageMessageImageStatusFormat.reads(in))
       .or(createImageMessageStatusFormat.reads(in))
-  }, Writes[CreateImageMessage] {
+  }, Writes[ImageTransferMessage] {
     case v: Status => createImageMessageStatusFormat.writes(v)
     case v: ImageStatus => createImageMessageImageStatusFormat.writes(v)
     case v: Progress => createImageMessageProgressFormat.writes(v)
     case v: Error => createImageMessageErrorFormat.writes(v)
+  })
+}
+
+trait RemoveImageMessageFormats extends CommonFormats {
+
+  import RemoveImageMessage._
+
+  implicit val removeImageMessageUntaggedFormat = (JsPath \ "Untagged").format[String]
+    .inmap[Untagged](in => Untagged(ImageName(in)), _.imageName.toString)
+  implicit val removeImageMessageDeletedFormat = (JsPath \ "Deleted").format[String]
+    .inmap[Deleted](in => Deleted(ImageId(in)), _.imageId.toString)
+
+  implicit val removeImageMessageFormat: Format[RemoveImageMessage] = Format(Reads { in =>
+    removeImageMessageUntaggedFormat.reads(in)
+      .or(removeImageMessageDeletedFormat.reads(in))
+  }, Writes[RemoveImageMessage] {
+    case v: Deleted => removeImageMessageDeletedFormat.writes(v)
+    case v: Untagged => removeImageMessageUntaggedFormat.writes(v)
   })
 }

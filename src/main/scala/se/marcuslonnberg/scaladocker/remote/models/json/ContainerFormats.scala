@@ -47,7 +47,7 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "Cpuset").formatNullable[String]
       )(ContainerResourceLimits.apply, unlift(ContainerResourceLimits.unapply))
 
-  implicit val containerConfigFormat: Format[ContainerConfig] =
+  implicit val containerConfigFormat: OFormat[ContainerConfig] =
     ((JsPath \ "Image").format[ImageName] and
       (JsPath \ "Entrypoint").formatNullable[Seq[String]] and
       (JsPath \ "Cmd").formatWithDefault[Seq[String]](Seq.empty) and
@@ -137,8 +137,8 @@ trait ContainerFormats extends CommonFormats {
 
   implicit val containerInfoFormat: Format[ContainerInfo] = {
     val volumesFormat: OFormat[Seq[VolumeBinding]] =
-      ((JsPath \ "Volumes").format[Map[String, String]] and
-        (JsPath \ "VolumesRW").format[Map[String, Boolean]]
+      ((JsPath \ "Volumes").formatWithDefault[Map[String, String]](Map.empty) and
+        (JsPath \ "VolumesRW").formatWithDefault[Map[String, Boolean]](Map.empty)
         )({ (volumes, volumesRw) =>
         volumes.map {
           case (containerPath, hostPath) =>

@@ -16,3 +16,8 @@ case class ServerErrorException(statusCode: StatusCode, detailMessage: String) e
 case class BadRequestException(detailMessage: String) extends DockerApiException(detailMessage)
 
 case class CreateImageException(image: ImageName) extends DockerApiException(s"An error occurred while creating image: $image")
+
+
+abstract class DockerException(message: String) extends RuntimeException(message)
+
+case class DockerPullImageException(message: String) extends DockerException(message)

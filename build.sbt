@@ -9,6 +9,7 @@ crossScalaVersions := Seq("2.10.5", "2.11.7")
 scalacOptions := Seq("-deprecation", "-unchecked", "-feature")
 
 libraryDependencies ++= Dependencies.all
+dependencyOverrides += "com.typesafe.play" %% "play-json" % Dependencies.playJsonVersion
 resolvers ++= Dependencies.resolvers
 
 licenses := Seq("MIT License" -> url("https://github.com/marcuslonnberg/scala-docker/blob/master/LICENSE"))

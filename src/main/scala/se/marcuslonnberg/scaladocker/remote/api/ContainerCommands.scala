@@ -1,126 +1,160 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
-import akka.http.scaladsl.model.HttpMethods._
+import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri.{Path, Query}
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
-import akka.http.scaladsl.unmarshalling._
-import org.reactivestreams.Publisher
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.stream.scaladsl.{FlattenStrategy, Flow, Source}
+import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
+import org.joda.time.{DateTime, Seconds}
 import se.marcuslonnberg.scaladocker.remote.models._
 import se.marcuslonnberg.scaladocker.remote.models.json._
 
-import scala.concurrent.Future
-import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future}
 
-trait ContainerCommands extends DockerCommands {
-  def list(all: Boolean = false): Future[Seq[ContainerStatus]] = {
-    sendGetRequest(Path / "containers" / "json", Query("all" -> all.toString)).flatMap { response =>
+class ContainerCommands(connection: DockerConnection) extends Commands {
+
+  import connection._
+
+  protected val containersPath = Path / "containers"
+
+  def list(
+    all: Boolean
+  )(implicit ec: ExecutionContext): Future[Seq[ContainerStatus]] = {
+    val request = Get(buildUri(containersPath / "json", Query("all" -> all.toString)))
+    connection.sendRequest(request).flatMap { response =>
       response.status match {
         case StatusCodes.OK =>
-          val unmarshaller = implicitly[FromResponseUnmarshaller[Seq[ContainerStatus]]]
-          unmarshaller(response)
-        case StatusCodes.BadRequest =>
-          entityAsString(response).map { entity =>
-            throw BadRequestException(entity)
-          }
-        case StatusCodes.InternalServerError =>
-          entityAsString(response).map { entity =>
-            throw ServerErrorException(response.status, entity)
-          }
+          Unmarshal(response).to[Seq[ContainerStatus]]
         case _ =>
-          unknownResponse(response)
+          unknownResponseFuture(response)
       }
     }
   }
 
-  def get(id: ContainerId): Future[ContainerInfo] = {
-    sendGetRequest(Path / "containers" / id.value / "json").flatMap { response =>
+  def get(
+    containerId: ContainerId
+  )(implicit ec: ExecutionContext): Future[ContainerInfo] = {
+    val request = Get(buildUri(containersPath / containerId.value / "json"))
+    connection.sendRequest(request).flatMap { response =>
       response.status match {
         case StatusCodes.OK =>
-          val unmarshaller = implicitly[FromResponseUnmarshaller[ContainerInfo]]
-          unmarshaller(response)
-        case StatusCodes.NotFound =>
-          Future.failed(ContainerNotFoundException(id))
-        case StatusCodes.InternalServerError =>
-          entityAsString(response).map { entity =>
-            throw ServerErrorException(response.status, entity)
-          }
+          Unmarshal(response).to[ContainerInfo]
         case _ =>
-          unknownResponse(response)
+          unknownResponseFuture(response)
       }
     }
   }
 
-  def create(config: ContainerConfig, name: Option[ContainerName] = None): Future[CreateContainerResponse] = {
-    val query = name.map(n => Uri.Query("name" -> n.value)).getOrElse(Uri.Query.Empty)
-    sendPostRequest(Path / "containers" / "create", query, config).flatMap { response =>
+  def create(
+    containerConfig: ContainerConfig,
+    hostConfig: HostConfig,
+    containerName: Option[ContainerName]
+  )(implicit ec: ExecutionContext): Future[CreateContainerResponse] = {
+    val configJson = containerConfigFormat.writes(containerConfig) + ("HostConfig" -> hostConfigFormat.writes(hostConfig))
+    val query = containerName.map(name => Query("name" -> name.value)).getOrElse(Query())
+    val request = Post(buildUri(containersPath / "create", query), configJson)
+    connection.sendRequest(request).flatMap { response =>
       response.status match {
         case StatusCodes.Created =>
-          val unmarshaller = implicitly[FromResponseUnmarshaller[CreateContainerResponse]]
-          unmarshaller(response)
-        case StatusCodes.NotFound =>
-          Future.failed(ImageNotFoundException(config.image.toString))
-        case StatusCodes.InternalServerError =>
-          entityAsString(response).map { entity =>
-            throw ServerErrorException(response.status, entity)
-          }
+          Unmarshal(response).to[CreateContainerResponse]
         case _ =>
-          unknownResponse(response)
+          unknownResponseFuture(response)
       }
     }
   }
 
-  def start(id: ContainerId, config: HostConfig = HostConfig()): Future[ContainerId] = {
-    sendPostRequest(Path / "containers" / id.value / "start", content = config).flatMap(containerResponse(id))
+  def start(
+    containerId: ContainerId,
+    hostConfig: Option[HostConfig] = None
+  )(implicit ec: ExecutionContext): Future[ContainerId] = {
+    val request = Post(buildUri(containersPath / containerId.value / "start"), hostConfig)
+    connection.sendRequest(request).flatMap { response =>
+      response.status match {
+        case StatusCodes.NoContent =>
+          Future.successful(containerId)
+        case _ =>
+          unknownResponseFuture(response)
+      }
+    }
   }
 
   def stop(
-    id: ContainerId,
-    maxWaitTime: Option[Duration] = None
-  ): Future[ContainerId] = {
-    val uri = baseUri
-      .withPath(Path / "containers" / id.value / "stop")
-      .withQuery("t" -> maxWaitTime.fold(Query.EmptyValue)(_.toSeconds.toString))
-    sendRequest(HttpRequest(POST, uri)).flatMap(containerResponse(id))
+    containerId: ContainerId,
+    maximumWait: Seconds
+  )(implicit ec: ExecutionContext): Future[ContainerId] = {
+    val request = Post(buildUri(containersPath / containerId.value / "stop", Query("t" -> maximumWait.getSeconds.toString)))
+    connection.sendRequest(request).flatMap { response =>
+      response.status match {
+        case StatusCodes.NoContent =>
+          Future.successful(containerId)
+        case _ =>
+          unknownResponseFuture(response)
+      }
+    }
   }
 
-  def delete(
-    id: ContainerId,
-    removeVolumes: Option[Boolean] = None,
-    force: Option[Boolean] = None
-  ): Future[ContainerId] = {
-    val uri = baseUri
-      .withPath(Path / "containers" / id.value)
-      .withQuery(
-        "t" -> removeVolumes.fold(Query.EmptyValue)(_.toString),
-        "force" -> force.fold(Query.EmptyValue)(_.toString))
-    sendRequest(HttpRequest(DELETE, uri)) flatMap containerResponse(id)
+  def restart(
+    containerId: ContainerId,
+    maximumWait: Seconds
+  )(implicit ec: ExecutionContext): Future[ContainerId] = {
+    val request = Post(buildUri(containersPath / containerId.value / "stop", Query("t" -> maximumWait.getSeconds.toString)))
+    connection.sendRequest(request).flatMap { response =>
+      response.status match {
+        case StatusCodes.NoContent =>
+          Future.successful(containerId)
+        case _ =>
+          unknownResponseFuture(response)
+      }
+    }
+  }
+
+  def remove(
+    containerId: ContainerId,
+    force: Boolean,
+    removeVolumes: Boolean
+  )(implicit ec: ExecutionContext): Future[ContainerId] = {
+    val query = Query("force" -> force.toString, "v" -> removeVolumes.toString)
+    val request = Delete(buildUri(containersPath / containerId.value, query))
+    connection.sendRequest(request).flatMap { response =>
+      response.status match {
+        case StatusCodes.NoContent =>
+          Future.successful(containerId)
+        case _ =>
+          unknownResponseFuture(response)
+      }
+    }
   }
 
   def logs(
-    id: ContainerId,
-    follow: Boolean = false,
-    stdout: Boolean = true,
-    stderr: Boolean = false,
-    timestamps: Boolean = false
-  ): Publisher[String] = {
-    val uri = baseUri
-      .withPath(Path / "containers" / id.value / "logs")
-      .withQuery(
-        "follow" -> follow.toString,
-        "stdout" -> stdout.toString,
-        "stderr" -> stderr.toString,
-        "timestamps" -> timestamps.toString)
-    requestChunkedLines(HttpRequest(GET, uri))
-  }
+    containerId: ContainerId,
+    follow: Boolean,
+    stdout: Boolean,
+    stderr: Boolean,
+    since: Option[DateTime],
+    timestamps: Boolean,
+    tailLimit: Option[Int]
+  )(implicit ec: ExecutionContext): Source[String, Unit] = {
+    val query = Query(
+      "follow" -> follow.toString,
+      "stdout" -> stdout.toString,
+      "stderr" -> stderr.toString,
+      "since" -> since.map(_.getMillis).getOrElse(0).toString,
+      "timestamps" -> timestamps.toString,
+      "tail" -> tailLimit.map(_.toString).getOrElse("all")
+    )
+    val request = Get(buildUri(containersPath / containerId.value / "logs", query))
+    val contentType = ContentType(DockerApi.MediaTypes.`application/vnd.docker.raw-stream`)
 
-  private def containerResponse(id: ContainerId)(response: HttpResponse): Future[ContainerId] = {
-    response.status match {
-      case StatusCodes.NoContent =>
-        Future.successful(id)
-      case StatusCodes.NotFound =>
-        Future.failed(new ContainerNotFoundException(id))
-      case _ =>
-        unknownResponse(response)
-    }
+    val flow: Flow[HttpResponse, String, Unit] =
+      Flow[HttpResponse].map {
+        case HttpResponse(StatusCodes.OK, _, HttpEntity.Chunked(_, chunks), _) =>
+          chunks.map(_.data().utf8String)
+        case response =>
+          unknownResponse(response)
+      }.flatten(FlattenStrategy.concat)
+
+    Source(connection.sendRequest(request))
+      .via(flow)
   }
 }

@@ -1,5 +1,6 @@
 package se.marcuslonnberg.scaladocker.remote.models.json
 
+import akka.http.scaladsl.model.Uri
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatterBuilder, ISODateTimeFormat}
 import play.api.data.validation.ValidationError
@@ -11,6 +12,13 @@ import se.marcuslonnberg.scaladocker.remote.models.json.JsonUtils._
 import scala.util.Try
 
 trait CommonFormats {
+
+  implicit def optionReads[V: Reads]: Reads[Option[V]] = Reads { value =>
+    value.validate[V].map(Some(_)).recover { case _ => None }
+  }
+
+  implicit val uri: Format[Uri] = JsPath.format[String].inmap[Uri](str => Uri(str), _.toString())
+
   val dateTimeSecondsFormat: Format[DateTime] = Format[DateTime](
     JsPath.read[Long].map(seconds => new DateTime(seconds * 1000)),
     Writes { dt =>
@@ -112,14 +120,14 @@ trait CommonFormats {
     }
 
     override def writes(o: Map[Port, Seq[PortBinding]]): JsValue = {
-      val ports = o.toSeq.map {
+      val ports = o.toSeq.flatMap {
         case (port, Nil) =>
           Seq(JsonPort(port.port, port.protocol, None, None))
         case (port, bindings) =>
           bindings.map { binding =>
             JsonPort(port.port, port.protocol, Some(binding.hostPort), Some(binding.hostIp))
           }
-      }.flatten
+      }
       JsArray(ports.map(Json.toJson(_)))
     }
   }

@@ -61,9 +61,13 @@ case class ImageName(registry: Option[String] = None, namespace: Option[String] 
     s"Tag name ('$tag') can only contain characters [A-Za-z0-9_.-] and have a length between 1 and 128")
 
   override def toString = {
+    nameWithoutTag + ":" + tag
+  }
+
+  def nameWithoutTag: String = {
     val registryString = registry.fold("")(_ + "/")
     val namespaceString = namespace.fold("")(_ + "/")
-    registryString + namespaceString + repository + ":" + tag
+    registryString + namespaceString + repository
   }
 }
 
