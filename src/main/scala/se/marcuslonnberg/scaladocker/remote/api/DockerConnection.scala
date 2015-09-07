@@ -29,8 +29,9 @@ object DockerConnection {
 
     maybeTls match {
       case Some(tls) =>
-        DockerHttpTlsConnection(Uri(host.replaceFirst("tcp:", "https:")), tls, auths)
-        // TODO add more connection types
+        DockerHttpsConnection(Uri(host.replaceFirst("tcp:", "https:")), tls, auths)
+      case _ =>
+        DockerHttpConnection(host.replaceFirst("tcp:", "http:"), auths)
     }
   }
 }
@@ -51,8 +52,11 @@ trait DockerConnection {
   }
 }
 
-case class DockerHttpTlsConnection(baseUri: Uri, tls: TlsConfig, auths: Seq[RegistryAuth])
-    (implicit val system: ActorSystem, val materializer: Materializer)
+case class DockerHttpsConnection(
+  baseUri: Uri,
+  tls: TlsConfig,
+  auths: Seq[RegistryAuth]
+)(implicit val system: ActorSystem, val materializer: Materializer)
   extends DockerConnection with TlsSupport {
 
   val httpsContext = HttpsContext(createSSLContext(tls))
@@ -60,6 +64,15 @@ case class DockerHttpTlsConnection(baseUri: Uri, tls: TlsConfig, auths: Seq[Regi
   override def sendRequest(request: HttpRequest): Future[HttpResponse] = {
     Http(system).singleRequest(request, httpsContext = Some(httpsContext))
   }
+}
 
+case class DockerHttpConnection(
+  baseUri: Uri,
+  auths: Seq[RegistryAuth]
+)(implicit val system: ActorSystem, val materializer: Materializer)
+  extends DockerConnection {
+  override def sendRequest(request: HttpRequest): Future[HttpResponse] = {
+    Http(system).singleRequest(request)
+  }
 }
 
