@@ -9,8 +9,8 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.io.SynchronousFileSource
 import akka.stream.scaladsl.{FlattenStrategy, Flow, Source}
 import akka.util.ByteString
-import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 import play.api.libs.json.Json
+import se.marcuslonnberg.scaladocker.remote.api.PlayJsonSupport._
 import se.marcuslonnberg.scaladocker.remote.models._
 import se.marcuslonnberg.scaladocker.remote.models.json._
 

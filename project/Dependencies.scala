@@ -14,8 +14,7 @@ object Dependencies {
   )
 
   val json = Seq(
-    "com.typesafe.play" %% "play-json" % playJsonVersion,
-    "de.heikoseeberger" %% "akka-http-play-json" % "1.0.0"
+    "com.typesafe.play" %% "play-json" % playJsonVersion
   )
 
   val misc = Seq(

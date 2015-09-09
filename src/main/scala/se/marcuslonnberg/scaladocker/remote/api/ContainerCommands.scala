@@ -5,8 +5,8 @@ import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.scaladsl.{FlattenStrategy, Flow, Source}
-import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 import org.joda.time.{DateTime, Seconds}
+import se.marcuslonnberg.scaladocker.remote.api.PlayJsonSupport._
 import se.marcuslonnberg.scaladocker.remote.models._
 import se.marcuslonnberg.scaladocker.remote.models.json._
 
