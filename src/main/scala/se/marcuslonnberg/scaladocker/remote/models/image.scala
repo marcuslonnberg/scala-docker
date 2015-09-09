@@ -47,17 +47,22 @@ object ImageName {
 
     ImageName(registry, namespace, repo, tag)
   }
+
+  private[models] val commonNameRegex = "[a-z0-9]+(?:[._-][a-z0-9]+)*".r
 }
 
 case class ImageName(registry: Option[String] = None, namespace: Option[String] = None,
   repository: String, tag: String = "latest") extends ImageIdentifier {
+
+  import ImageName._
+
   namespace.foreach { n =>
-    require(n.matches("[a-z0-9-_]{4,30}"),
-      s"Namespace name ('$n') can only contain characters [a-z0-9_] and have a size between 4 and 30")
+    require(n.length <= 255 && commonNameRegex.findFirstIn(n).isDefined,
+      s"Namespace name ('$n') must match ${commonNameRegex.pattern} and can not be more than 255 characters")
   }
-  require(repository.matches("[a-z0-9-_.]+") || repository == "<none>",
-    s"Repository name ('$repository') can only contain characters [a-z0-9-_.]")
-  require(tag.matches("[\\w][\\w.-]{0,127}") || tag == "<none>",
+  require(repository.length <= 255 && commonNameRegex.findFirstIn(repository).isDefined || repository == "<none>",
+    s"Repository name ('$repository') must match ${commonNameRegex.pattern} and can not be more than 255 characters")
+  require(tag.matches("[\\w][\\w.-]{0,128}") || tag == "<none>",
     s"Tag name ('$tag') can only contain characters [A-Za-z0-9_.-] and have a length between 1 and 128")
 
   override def toString = {
