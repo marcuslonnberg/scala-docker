@@ -22,9 +22,13 @@ object DockerConnection {
       env("DOCKER_CERT_PATH").map(TlsConfig.fromDir)
     }
 
-    val auths = sys.props.get("user.home").map { homePath =>
+    val auths = sys.props.get("user.home").flatMap { homePath =>
       val dockerCfgPath = Paths.get(homePath, ".dockercfg")
-      AuthUtils.readDockerCfgFile(dockerCfgPath)
+      if (dockerCfgPath.toFile.isFile) {
+        Some(AuthUtils.readDockerCfgFile(dockerCfgPath))
+      } else {
+        None
+      }
     }.getOrElse(Seq.empty)
 
     maybeTls match {
