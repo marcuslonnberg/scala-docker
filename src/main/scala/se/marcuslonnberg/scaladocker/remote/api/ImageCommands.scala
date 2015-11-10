@@ -46,6 +46,8 @@ class ImageCommands(connection: DockerConnection) extends Commands {
       response.status match {
         case StatusCodes.OK =>
           Unmarshal(response).to[Image]
+        case StatusCodes.NotFound =>
+          throw new ImageNotFoundException(imageId.toString)
         case _ =>
           unknownResponseFuture(response)
       }
@@ -90,6 +92,8 @@ class ImageCommands(connection: DockerConnection) extends Commands {
           chunks.map(_.data().utf8String).filter(_.nonEmpty).map { str =>
             Json.parse(str).as[ImageTransferMessage]
           }
+        case HttpResponse(StatusCodes.NotFound, _, _, _) =>
+          throw new ImageNotFoundException(imageName.toString)
         case response =>
           unknownResponse(response)
       }.flatten(FlattenStrategy.concat)
@@ -113,6 +117,8 @@ class ImageCommands(connection: DockerConnection) extends Commands {
       response.status match {
         case StatusCodes.Created =>
           Future.successful(tag)
+        case StatusCodes.NotFound =>
+          throw new ImageNotFoundException(imageId.toString)
         case _ =>
           // TODO handle errors
           unknownResponseFuture(response)
@@ -133,6 +139,8 @@ class ImageCommands(connection: DockerConnection) extends Commands {
           chunks.map(_.data().utf8String).map(str => Json.parse(str).as[RemoveImageMessage])
         case HttpResponse(StatusCodes.OK, _, entity, _) =>
           Source(Unmarshal(entity).to[List[RemoveImageMessage]]).mapConcat[RemoveImageMessage](identity)
+        case HttpResponse(StatusCodes.NotFound, _, _, _) =>
+          throw new ImageNotFoundException(imageId.toString)
         case response =>
           unknownResponse(response)
       }.flatten(FlattenStrategy.concat)
