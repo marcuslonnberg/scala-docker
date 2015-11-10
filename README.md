@@ -9,7 +9,7 @@ Setup
 Add as a dependency in your `build.sbt`:
 
 ```scala
-libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.2.0"
+libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.3.0"
 ```
 
 Cross built for Scala 2.10 and 2.11. 
@@ -21,12 +21,12 @@ Usage
 
 ```scala
 implicit val system = ActorSystem()
-implicit val materializer = ActorFlowMaterializer(ActorFlowMaterializerSettings(system))
+implicit val materializer = ActorMaterializer(ActorMaterializerSettings(system))
 
-val docker = DockerClient()
+val client = new DockerClient(DockerConnection.fromEnvironment())
 ```
 
-`DockerClient()` will now which Docker host to connect to by reading `DOCKER_HOST`, `DOCKER_TLS_VERIFY` and `DOCKER_CERT_PATH`.
+`DockerConnection.fromEnvironment()` will know which Docker host to connect to by reading `DOCKER_HOST`, `DOCKER_TLS_VERIFY` and `DOCKER_CERT_PATH`.
 Host and TLS settings can also be provided as arguments. 
 
 ### Running a container
