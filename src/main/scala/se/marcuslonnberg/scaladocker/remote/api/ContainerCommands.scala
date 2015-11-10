@@ -40,6 +40,8 @@ class ContainerCommands(connection: DockerConnection) extends Commands {
       response.status match {
         case StatusCodes.OK =>
           Unmarshal(response).to[ContainerInfo]
+        case StatusCodes.NotFound =>
+          throw new ContainerNotFoundException(containerId)
         case _ =>
           unknownResponseFuture(response)
       }
@@ -73,6 +75,8 @@ class ContainerCommands(connection: DockerConnection) extends Commands {
       response.status match {
         case StatusCodes.NoContent =>
           Future.successful(containerId)
+        case StatusCodes.NotFound =>
+          throw new ContainerNotFoundException(containerId)
         case _ =>
           unknownResponseFuture(response)
       }
@@ -88,6 +92,10 @@ class ContainerCommands(connection: DockerConnection) extends Commands {
       response.status match {
         case StatusCodes.NoContent =>
           Future.successful(containerId)
+        case StatusCodes.NotModified =>
+          throw new ContainerAlreadyStoppedException(containerId)
+        case StatusCodes.NotFound =>
+          throw new ContainerNotFoundException(containerId)
         case _ =>
           unknownResponseFuture(response)
       }
@@ -103,6 +111,8 @@ class ContainerCommands(connection: DockerConnection) extends Commands {
       response.status match {
         case StatusCodes.NoContent =>
           Future.successful(containerId)
+        case StatusCodes.NotFound =>
+          throw new ContainerNotFoundException(containerId)
         case _ =>
           unknownResponseFuture(response)
       }
@@ -120,6 +130,8 @@ class ContainerCommands(connection: DockerConnection) extends Commands {
       response.status match {
         case StatusCodes.NoContent =>
           Future.successful(containerId)
+        case StatusCodes.NotFound =>
+          throw new ContainerNotFoundException(containerId)
         case _ =>
           unknownResponseFuture(response)
       }
@@ -150,6 +162,8 @@ class ContainerCommands(connection: DockerConnection) extends Commands {
       Flow[HttpResponse].map {
         case HttpResponse(StatusCodes.OK, _, HttpEntity.Chunked(_, chunks), _) =>
           chunks.map(_.data().utf8String)
+        case HttpResponse(StatusCodes.NotFound, _, _, _) =>
+          throw new ContainerNotFoundException(containerId)
         case response =>
           unknownResponse(response)
       }.flatten(FlattenStrategy.concat)

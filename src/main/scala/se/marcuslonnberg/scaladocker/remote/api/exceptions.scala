@@ -7,6 +7,10 @@ abstract class DockerApiException(message: String) extends RuntimeException(mess
 
 case class ContainerNotFoundException(id: ContainerId) extends DockerApiException(s"Container $id was not found")
 
+case class ContainerAlreadyStartedException(id: ContainerId) extends DockerApiException(s"Container $id has already started")
+
+case class ContainerAlreadyStoppedException(id: ContainerId) extends DockerApiException(s"Container $id has already stopped")
+
 case class ImageNotFoundException(imageName: String) extends DockerApiException(s"Image $imageName was not found")
 
 case class UnknownResponseException(statusCode: StatusCode, entity: String) extends DockerApiException(s"Got unknown status: $statusCode, with entity: $entity")
