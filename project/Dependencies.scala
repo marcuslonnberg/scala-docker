@@ -20,7 +20,7 @@ object Dependencies {
   val misc = Seq(
     "org.kamranzafar" % "jtar" % "2.3",
     "commons-codec" % "commons-codec" % "1.10",
-    "com.github.nscala-time" %% "nscala-time" % "2.4.0",
+    "com.github.nscala-time" %% "nscala-time" % "2.6.0",
     "org.scalatest" %% "scalatest" % "2.2.5" % "test",
     "ca.juliusdavies" % "not-yet-commons-ssl" % "0.3.11"
   )
