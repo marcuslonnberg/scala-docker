@@ -52,7 +52,7 @@ trait DockerConnection {
   def sendRequest(request: HttpRequest): Future[HttpResponse]
 
   def buildUri(path: Path, query: Query = Query.Empty): Uri = {
-    baseUri.copy(path = baseUri.path ++ path, query = query)
+    baseUri.copy(path = baseUri.path ++ path, rawQueryString = Some(query.toString()))
   }
 }
 

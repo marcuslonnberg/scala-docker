@@ -1,15 +1,22 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.Sink
 import akka.testkit.TestKit
 import se.marcuslonnberg.scaladocker.RemoteApiTest
-import se.marcuslonnberg.scaladocker.remote._
 import se.marcuslonnberg.scaladocker.remote.models._
 
 class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpec {
+
   import system.dispatcher
+
   val busybox = ImageName("busybox")
+
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+
+    client.pullFuture(busybox).value
+  }
 
   "Container API" should "list containers" taggedAs RemoteApiTest in {
     val containerId = client.runLocal(ContainerConfig(busybox, command = List("ls", "/"))).futureValue

@@ -4,7 +4,7 @@ import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.scaladsl.{FlattenStrategy, Flow, Source}
+import akka.stream.scaladsl.{Flow, Source}
 import org.joda.time.{DateTime, Seconds}
 import se.marcuslonnberg.scaladocker.remote.api.PlayJsonSupport._
 import se.marcuslonnberg.scaladocker.remote.models._
@@ -156,7 +156,6 @@ class ContainerCommands(connection: DockerConnection) extends Commands {
       "tail" -> tailLimit.map(_.toString).getOrElse("all")
     )
     val request = Get(buildUri(containersPath / containerId.value / "logs", query))
-    val contentType = ContentType(DockerApi.MediaTypes.`application/vnd.docker.raw-stream`)
 
     val flow: Flow[HttpResponse, String, Unit] =
       Flow[HttpResponse].map {
@@ -166,9 +165,9 @@ class ContainerCommands(connection: DockerConnection) extends Commands {
           throw new ContainerNotFoundException(containerId)
         case response =>
           unknownResponse(response)
-      }.flatten(FlattenStrategy.concat)
+      }.flatMapConcat(identity)
 
-    Source(connection.sendRequest(request))
+    Source.fromFuture(connection.sendRequest(request))
       .via(flow)
   }
 }

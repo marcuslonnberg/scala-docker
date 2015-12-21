@@ -2,7 +2,7 @@ package se.marcuslonnberg.scaladocker.remote.api
 
 import java.io.File
 
-import akka.stream.scaladsl.{FlattenStrategy, Sink, Source}
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import org.joda.time.{DateTime, Seconds}
 import se.marcuslonnberg.scaladocker.remote.models._
@@ -118,12 +118,12 @@ class DockerClient(connection: DockerConnection) {
     hostConfig: HostConfig = HostConfig(),
     name: Option[ContainerName] = None
   )(implicit ec: ExecutionContext): Source[RunMessage, Unit] = {
-    def runContainer = Source(runLocal(containerConfig, hostConfig, name)).map(RunMessage.ContainerStarted)
+    def runContainer = Source.fromFuture(runLocal(containerConfig, hostConfig, name)).map(RunMessage.ContainerStarted)
     runContainer.map(message => Source.single(message)).recover {
       case _: ImageNotFoundException =>
         image.create(containerConfig.image).map(RunMessage.CreatingImage) ++
           runContainer
-    }.flatten(FlattenStrategy.concat)
+    }.flatMapConcat(identity)
   }
 
   def runFuture(

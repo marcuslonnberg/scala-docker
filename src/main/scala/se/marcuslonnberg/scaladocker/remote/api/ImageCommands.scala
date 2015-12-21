@@ -6,8 +6,7 @@ import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.io.SynchronousFileSource
-import akka.stream.scaladsl.{FlattenStrategy, Flow, Source}
+import akka.stream.scaladsl._
 import akka.util.ByteString
 import play.api.libs.json.Json
 import se.marcuslonnberg.scaladocker.remote.api.PlayJsonSupport._
@@ -71,9 +70,9 @@ class ImageCommands(connection: DockerConnection) extends Commands {
           }
         case response =>
           unknownResponse(response)
-      }.flatten(FlattenStrategy.concat)
+      }.flatMapConcat(identity)
 
-    Source(connection.sendRequest(request))
+    Source.fromFuture(connection.sendRequest(request))
       .via(flow)
   }
 
@@ -96,9 +95,9 @@ class ImageCommands(connection: DockerConnection) extends Commands {
           throw new ImageNotFoundException(imageName.toString)
         case response =>
           unknownResponse(response)
-      }.flatten(FlattenStrategy.concat)
+      }.flatMapConcat(identity)
 
-    Source(connection.sendRequest(request))
+    Source.fromFuture(connection.sendRequest(request))
       .via(flow)
   }
 
@@ -138,14 +137,14 @@ class ImageCommands(connection: DockerConnection) extends Commands {
         case HttpResponse(StatusCodes.OK, _, HttpEntity.Chunked(_, chunks), _) =>
           chunks.map(_.data().utf8String).map(str => Json.parse(str).as[RemoveImageMessage])
         case HttpResponse(StatusCodes.OK, _, entity, _) =>
-          Source(Unmarshal(entity).to[List[RemoveImageMessage]]).mapConcat[RemoveImageMessage](identity)
+          Source.fromFuture(Unmarshal(entity).to[List[RemoveImageMessage]]).mapConcat[RemoveImageMessage](identity)
         case HttpResponse(StatusCodes.NotFound, _, _, _) =>
           throw new ImageNotFoundException(imageId.toString)
         case response =>
           unknownResponse(response)
-      }.flatten(FlattenStrategy.concat)
+      }.flatMapConcat(identity)
 
-    Source(connection.sendRequest(request))
+    Source.fromFuture(connection.sendRequest(request))
       .via(flow)
   }
 
@@ -156,7 +155,7 @@ class ImageCommands(connection: DockerConnection) extends Commands {
     rm: Boolean = true,
     alwaysPull: Boolean = false
   )(implicit ec: ExecutionContext): Source[BuildMessage, Unit] = {
-    build(SynchronousFileSource(tarFile), tarFile.length(), imageName, cache, rm, alwaysPull)
+    build(FileIO.fromFile(tarFile), tarFile.length(), imageName, cache, rm, alwaysPull)
   }
 
   def build(
@@ -181,9 +180,9 @@ class ImageCommands(connection: DockerConnection) extends Commands {
           chunks.map(_.data().utf8String).map(str => Json.parse(str).as[BuildMessage])
         case response =>
           unknownResponse(response)
-      }.flatten(FlattenStrategy.concat)
+      }.flatMapConcat(identity)
 
-    Source(connection.sendRequest(request))
+    Source.fromFuture(connection.sendRequest(request))
       .via(flow)
   }
 }

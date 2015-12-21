@@ -2,7 +2,7 @@ import sbt._
 
 object Dependencies {
   val akkaVersion = "2.3.14"
-  val akkaHttpStreamsVersion = "1.0"
+  val akkaHttpStreamsVersion = "2.0"
   val playJsonVersion = "2.3.10"
 
   val akka = Seq(

@@ -11,7 +11,7 @@ trait Commands {
   def unknownResponse(response: HttpResponse)(implicit ec: ExecutionContext, mat: Materializer): Source[Nothing, Unit] = {
     import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers._
 
-    Source.apply(Unmarshal(response.entity).to[String](stringUnmarshaller, ec).map { entity =>
+    Source.fromFuture(Unmarshal(response.entity).to[String](stringUnmarshaller, ec, mat).map { entity =>
       if (response.status == StatusCodes.InternalServerError) {
         throw new ServerErrorException(response.status, entity)
       } else {
