@@ -9,7 +9,7 @@ Setup
 Add as a dependency in your `build.sbt`:
 
 ```scala
-libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.3.0"
+libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.4.0"
 ```
 
 Cross built for Scala 2.10 and 2.11. 
