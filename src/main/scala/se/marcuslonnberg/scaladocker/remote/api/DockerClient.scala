@@ -10,7 +10,7 @@ import se.marcuslonnberg.scaladocker.remote.models._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
-class DockerClient(connection: DockerConnection) {
+case class DockerClient(connection: DockerConnection) {
 
   import connection._
 
