@@ -10,4 +10,5 @@ jdk:
   - oraclejdk7
   - openjdk7
 script:
+  - export DOCKER_HOST=tcp://127.0.0.1:2376
   - sbt ++$TRAVIS_SCALA_VERSION "test"
