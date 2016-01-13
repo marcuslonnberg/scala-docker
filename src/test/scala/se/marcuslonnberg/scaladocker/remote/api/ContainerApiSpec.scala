@@ -15,7 +15,7 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpe
   override protected def beforeAll(): Unit = {
     super.beforeAll()
 
-    client.pullFuture(busybox).value
+    client.pullFuture(busybox).futureValue
   }
 
   "Container API" should "list containers" taggedAs RemoteApiTest in {

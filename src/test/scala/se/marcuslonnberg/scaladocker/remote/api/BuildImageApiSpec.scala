@@ -11,6 +11,12 @@ import se.marcuslonnberg.scaladocker.remote.models.{BuildMessages, ImageName}
 class BuildImageApiSpec extends TestKit(ActorSystem("build-image-api")) with ApiSpec {
   import system.dispatcher
 
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+
+    client.pullFuture(ImageName("busybox")).futureValue
+  }
+
   "Build image API" should "run commands from the Dockerfile in the root of the tar archive" taggedAs RemoteApiTest in {
     val imageName = ImageName("scaladocker/image-build-only-dockerfile")
 
