@@ -9,6 +9,9 @@ jdk:
   - oraclejdk8
   - oraclejdk7
   - openjdk7
+before_install:
+  - sudo echo 'DOCKER_OPTS="-D -H tcp://127.0.0.1:2375"' > /etc/default/docker
+  - sudo service docker restart
 script:
-  - export DOCKER_HOST=unix:///var/run/docker.sock
+  - export DOCKER_HOST=tcp://127.0.0.1:2375
   - sbt ++$TRAVIS_SCALA_VERSION "test"
