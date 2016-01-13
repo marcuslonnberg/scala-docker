@@ -10,7 +10,7 @@ jdk:
   - oraclejdk7
   - openjdk7
 before_install:
-  - sudo echo 'DOCKER_OPTS="-D -H tcp://127.0.0.1:2375"' > /etc/default/docker
+  - echo 'DOCKER_OPTS="-D -H tcp://127.0.0.1:2375"' | sudo tee /etc/default/docker
   - sudo service docker restart
 script:
   - export DOCKER_HOST=tcp://127.0.0.1:2375
