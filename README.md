@@ -3,6 +3,8 @@ scala-docker
 
 Scala client using reactive streams (akka-streams) to communicate with [Docker](https://docker.com) hosts.
 
+[![Build Status](https://travis-ci.org/marcuslonnberg/scala-docker.svg?branch=master)](https://travis-ci.org/marcuslonnberg/scala-docker)
+
 Setup
 -----
 
