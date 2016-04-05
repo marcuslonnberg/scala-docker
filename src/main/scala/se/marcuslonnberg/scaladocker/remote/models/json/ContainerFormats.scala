@@ -163,8 +163,6 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "HostnamePath").format[String] and
       (JsPath \ "HostsPath").format[String] and
       (JsPath \ "Name").format[String] and
-      (JsPath \ "Driver").format[String] and
-      (JsPath \ "ExecDriver").format[String] and
       (JsPath \ "MountLabel").formatNullable[String] and
       (JsPath \ "ProcessLabel").formatNullable[String] and
       volumesFormat and

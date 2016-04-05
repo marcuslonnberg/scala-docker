@@ -363,8 +363,6 @@ case class ContainerInfo(
   hostnamePath: String,
   hostsPath: String,
   name: String,
-  driver: String,
-  execDriver: String,
   mountLabel: Option[String] = None,
   processLabel: Option[String] = None,
   volumes: Seq[VolumeBinding] = Seq.empty,

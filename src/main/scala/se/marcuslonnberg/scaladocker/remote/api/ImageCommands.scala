@@ -2,6 +2,7 @@ package se.marcuslonnberg.scaladocker.remote.api
 
 import java.io.File
 
+import akka.NotUsed
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model._
@@ -55,14 +56,14 @@ class ImageCommands(connection: DockerConnection) extends Commands {
 
   def create(
     imageName: ImageName
-  )(implicit ec: ExecutionContext): Source[ImageTransferMessage, Unit] = {
+  )(implicit ec: ExecutionContext): Source[ImageTransferMessage, NotUsed] = {
     val authHeader = AuthUtils.getAuthHeader(connection.auths, imageName.registry.map(Uri(_)))
 
     val query = Query("fromImage" -> imageName.toString)
     val request = Post(buildUri(imagesPath / "create", query))
       .withHeaders(authHeader.to[scala.collection.immutable.Seq])
 
-    val flow: Flow[HttpResponse, ImageTransferMessage, Unit] =
+    val flow: Flow[HttpResponse, ImageTransferMessage, NotUsed] =
       Flow[HttpResponse].map {
         case HttpResponse(StatusCodes.OK, _, HttpEntity.Chunked(_, chunks), _) =>
           chunks.map(_.data().utf8String).filter(_.nonEmpty).map { str =>
@@ -78,14 +79,14 @@ class ImageCommands(connection: DockerConnection) extends Commands {
 
   def push(
     imageName: ImageName
-  )(implicit ec: ExecutionContext): Source[ImageTransferMessage, Unit] = {
+  )(implicit ec: ExecutionContext): Source[ImageTransferMessage, NotUsed] = {
     val authHeader = AuthUtils.getAuthHeader(connection.auths, imageName.registry.map(Uri(_)))
 
     val imageNamePath = imagesPath ++ Path./ ++ Path(imageName.nameWithoutTag) ++ Path / "push"
     val request = Post(buildUri(imageNamePath, Query("tag" -> imageName.tag)))
       .withHeaders(authHeader.to[immutable.Seq])
 
-    val flow: Flow[HttpResponse, ImageTransferMessage, Unit] =
+    val flow: Flow[HttpResponse, ImageTransferMessage, NotUsed] =
       Flow[HttpResponse].map {
         case HttpResponse(StatusCodes.OK, _, HttpEntity.Chunked(_, chunks), _) =>
           chunks.map(_.data().utf8String).filter(_.nonEmpty).map { str =>
@@ -132,7 +133,7 @@ class ImageCommands(connection: DockerConnection) extends Commands {
   )(implicit ec: ExecutionContext): Source[RemoveImageMessage, Any] = {
     val query = Query("force" -> force.toString, "noprune" -> (!prune).toString)
     val request = Delete(buildUri(imagesPath / imageId.toString, query))
-    val flow: Flow[HttpResponse, RemoveImageMessage, Unit] =
+    val flow: Flow[HttpResponse, RemoveImageMessage, NotUsed] =
       Flow[HttpResponse].map {
         case HttpResponse(StatusCodes.OK, _, HttpEntity.Chunked(_, chunks), _) =>
           chunks.map(_.data().utf8String).map(str => Json.parse(str).as[RemoveImageMessage])
@@ -154,7 +155,7 @@ class ImageCommands(connection: DockerConnection) extends Commands {
     cache: Boolean = true,
     rm: Boolean = true,
     alwaysPull: Boolean = false
-  )(implicit ec: ExecutionContext): Source[BuildMessage, Unit] = {
+  )(implicit ec: ExecutionContext): Source[BuildMessage, NotUsed] = {
     build(FileIO.fromFile(tarFile), tarFile.length(), imageName, cache, rm, alwaysPull)
   }
 
@@ -165,7 +166,7 @@ class ImageCommands(connection: DockerConnection) extends Commands {
     cache: Boolean = true,
     rm: Boolean = true,
     alwaysPull: Boolean = false
-  )(implicit ec: ExecutionContext): Source[BuildMessage, Unit] = {
+  )(implicit ec: ExecutionContext): Source[BuildMessage, NotUsed] = {
     val query = Uri.Query(Map(
       "t" -> imageName.map(_.toString),
       "nocache" -> Some((!cache).toString),
@@ -174,7 +175,7 @@ class ImageCommands(connection: DockerConnection) extends Commands {
       .collect { case (key, Some(value)) => key -> value })
     val request = Post(buildUri(Path / "build", query), HttpEntity(MediaTypes.`application/x-tar`, tarLength, tarStream))
 
-    val flow: Flow[HttpResponse, BuildMessage, Unit] =
+    val flow: Flow[HttpResponse, BuildMessage, NotUsed] =
       Flow[HttpResponse].map {
         case HttpResponse(StatusCodes.OK, _, HttpEntity.Chunked(_, chunks), _) =>
           chunks.map(_.data().utf8String).map(str => Json.parse(str).as[BuildMessage])

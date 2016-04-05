@@ -81,9 +81,11 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpe
 
     val logStream = client.logs(containerId, follow = true)
 
-    val eventualResult = logStream.collect {
-      case "VALUE\n" => true
-    }.runWith(Sink.head)
+    val eventualResult = logStream
+      .collect {
+        case line if line.contains("VALUE") => true
+      }
+      .runWith(Sink.head)
 
     eventualResult.futureValue shouldEqual true
 

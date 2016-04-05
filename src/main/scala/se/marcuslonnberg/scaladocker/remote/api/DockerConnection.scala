@@ -5,7 +5,7 @@ import java.nio.file.Paths
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri}
-import akka.http.scaladsl.{Http, HttpsContext}
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.Materializer
 import se.marcuslonnberg.scaladocker.remote.models.RegistryAuth
 
@@ -63,10 +63,10 @@ case class DockerHttpsConnection(
 )(implicit val system: ActorSystem, val materializer: Materializer)
   extends DockerConnection with TlsSupport {
 
-  val httpsContext = HttpsContext(createSSLContext(tls))
+  val httpsContext = ConnectionContext.https(createSSLContext(tls))
 
   override def sendRequest(request: HttpRequest): Future[HttpResponse] = {
-    Http(system).singleRequest(request, httpsContext = Some(httpsContext))
+    Http(system).singleRequest(request, connectionContext = httpsContext)
   }
 }
 

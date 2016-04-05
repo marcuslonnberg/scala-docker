@@ -1,5 +1,6 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
+import akka.NotUsed
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model._
@@ -146,7 +147,7 @@ class ContainerCommands(connection: DockerConnection) extends Commands {
     since: Option[DateTime],
     timestamps: Boolean,
     tailLimit: Option[Int]
-  )(implicit ec: ExecutionContext): Source[String, Unit] = {
+  )(implicit ec: ExecutionContext): Source[String, NotUsed] = {
     val query = Query(
       "follow" -> follow.toString,
       "stdout" -> stdout.toString,
@@ -157,7 +158,7 @@ class ContainerCommands(connection: DockerConnection) extends Commands {
     )
     val request = Get(buildUri(containersPath / containerId.value / "logs", query))
 
-    val flow: Flow[HttpResponse, String, Unit] =
+    val flow: Flow[HttpResponse, String, NotUsed] =
       Flow[HttpResponse].map {
         case HttpResponse(StatusCodes.OK, _, HttpEntity.Chunked(_, chunks), _) =>
           chunks.map(_.data().utf8String)

@@ -1,5 +1,6 @@
 package se.marcuslonnberg.scaladocker.remote.api
 
+import akka.NotUsed
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
@@ -8,7 +9,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait Commands {
-  def unknownResponse(response: HttpResponse)(implicit ec: ExecutionContext, mat: Materializer): Source[Nothing, Unit] = {
+  def unknownResponse(response: HttpResponse)(implicit ec: ExecutionContext, mat: Materializer): Source[Nothing, NotUsed] = {
     import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers._
 
     Source.fromFuture(Unmarshal(response.entity).to[String](stringUnmarshaller, ec, mat).map { entity =>

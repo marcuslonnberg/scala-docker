@@ -2,6 +2,7 @@ package se.marcuslonnberg.scaladocker.remote.api
 
 import java.io.File
 
+import akka.NotUsed
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import org.joda.time.{DateTime, Seconds}
@@ -117,7 +118,7 @@ case class DockerClient(connection: DockerConnection) {
     containerConfig: ContainerConfig,
     hostConfig: HostConfig = HostConfig(),
     name: Option[ContainerName] = None
-  )(implicit ec: ExecutionContext): Source[RunMessage, Unit] = {
+  )(implicit ec: ExecutionContext): Source[RunMessage, NotUsed] = {
     def runContainer = Source.fromFuture(runLocal(containerConfig, hostConfig, name)).map(RunMessage.ContainerStarted)
     runContainer.map(message => Source.single(message)).recover {
       case _: ImageNotFoundException =>
@@ -136,7 +137,7 @@ case class DockerClient(connection: DockerConnection) {
     }.runWith(Sink.head)
   }
 
-  def pull(imageName: ImageName)(implicit ec: ExecutionContext): Source[ImageTransferMessage, Unit] = {
+  def pull(imageName: ImageName)(implicit ec: ExecutionContext): Source[ImageTransferMessage, NotUsed] = {
     image.create(imageName)
   }
 
@@ -144,7 +145,7 @@ case class DockerClient(connection: DockerConnection) {
     transferImageSourceToFuture(image.create(imageName), imageName)
   }
 
-  def transferImageSourceToFuture(source: Source[ImageTransferMessage, Unit], imageName: ImageName): Future[ImageName] = {
+  def transferImageSourceToFuture(source: Source[ImageTransferMessage, NotUsed], imageName: ImageName): Future[ImageName] = {
     val promise = Promise[ImageName]()
 
     source.collect {
@@ -160,7 +161,7 @@ case class DockerClient(connection: DockerConnection) {
     promise.future
   }
 
-  def push(imageName: ImageName)(implicit ec: ExecutionContext): Source[ImageTransferMessage, Unit] = image.push(imageName)
+  def push(imageName: ImageName)(implicit ec: ExecutionContext): Source[ImageTransferMessage, NotUsed] = image.push(imageName)
 
   def pushFuture(imageName: ImageName)(implicit ec: ExecutionContext): Future[ImageName] = {
     transferImageSourceToFuture(image.push(imageName), imageName)
@@ -178,7 +179,7 @@ case class DockerClient(connection: DockerConnection) {
     cache: Boolean = true,
     rm: Boolean = true,
     alwaysPull: Boolean = false
-  )(implicit ec: ExecutionContext): Source[BuildMessage, Unit] = image.buildFile(tarFile, imageName, cache, rm, alwaysPull)
+  )(implicit ec: ExecutionContext): Source[BuildMessage, NotUsed] = image.buildFile(tarFile, imageName, cache, rm, alwaysPull)
 
   def build(
     tarStream: Source[ByteString, Any],
@@ -187,7 +188,7 @@ case class DockerClient(connection: DockerConnection) {
     cache: Boolean = true,
     rm: Boolean = true,
     alwaysPull: Boolean = false
-  )(implicit ec: ExecutionContext): Source[BuildMessage, Unit] = {
+  )(implicit ec: ExecutionContext): Source[BuildMessage, NotUsed] = {
     image.build(tarStream, tarLength, imageName, cache, rm, alwaysPull)
   }
 }
