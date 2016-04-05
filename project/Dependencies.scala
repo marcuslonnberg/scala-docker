@@ -2,7 +2,7 @@ import sbt._
 
 object Dependencies {
   val akkaVersion = "2.4.3"
-  val playJsonVersion = "2.3.10"
+  val playJsonVersion = "2.5.1"
 
   val akka = Seq(
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,
@@ -20,8 +20,8 @@ object Dependencies {
   val misc = Seq(
     "org.kamranzafar" % "jtar" % "2.3",
     "commons-codec" % "commons-codec" % "1.10",
-    "com.github.nscala-time" %% "nscala-time" % "2.6.0",
-    "org.scalatest" %% "scalatest" % "2.2.5" % "test",
+    "com.github.nscala-time" %% "nscala-time" % "2.12.0",
+    "org.scalatest" %% "scalatest" % "2.2.6" % "test",
     "ca.juliusdavies" % "not-yet-commons-ssl" % "0.3.11"
   )
 
