@@ -3,18 +3,12 @@ services:
   - docker
 language: scala
 scala:
-  - 2.10.6
-  - 2.11.7
+  - 2.11.8
 jdk:
   - oraclejdk8
-  - oraclejdk7
-  - openjdk7
 before_install:
   - echo 'DOCKER_OPTS="-D -H tcp://127.0.0.1:2375"' | sudo tee /etc/default/docker
   - sudo service docker restart
-  # Workaround for buffer overflow error on JDK 7
-  - sudo hostname "$(hostname | cut -c1-63)"
-  - sed -e "s/^\\(127\\.0\\.0\\.1.*\\)/\\1 $(hostname | cut -c1-63)/" /etc/hosts | sudo tee /etc/hosts
 script:
   - export DOCKER_HOST=tcp://127.0.0.1:2375
   - sbt ++$TRAVIS_SCALA_VERSION "test"

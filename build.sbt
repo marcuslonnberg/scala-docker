@@ -5,7 +5,6 @@ organization := "se.marcuslonnberg"
 organizationHomepage := Some(url("https://github.com/marcuslonnberg"))
 
 scalaVersion := "2.11.8"
-crossScalaVersions := Seq("2.10.6", "2.11.8")
 scalacOptions := Seq("-deprecation", "-unchecked", "-feature")
 
 libraryDependencies ++= Dependencies.all
@@ -39,5 +38,4 @@ pomExtra := {
 
 useGpg := true
 
-releaseCrossBuild := true
 releasePublishArtifactsAction <<= PgpKeys.publishSigned
