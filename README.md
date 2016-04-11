@@ -11,10 +11,8 @@ Setup
 Add as a dependency in your `build.sbt`:
 
 ```scala
-libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.4.0"
+libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.5.0"
 ```
-
-Cross built for Scala 2.10 and 2.11. 
 
 Usage
 -----
@@ -29,7 +27,7 @@ val client = new DockerClient(DockerConnection.fromEnvironment())
 ```
 
 `DockerConnection.fromEnvironment()` will know which Docker host to connect to by reading `DOCKER_HOST`, `DOCKER_TLS_VERIFY` and `DOCKER_CERT_PATH`.
-Host and TLS settings can also be provided as arguments. 
+Host and TLS settings can also be provided as arguments.
 
 ### Running a container
 
