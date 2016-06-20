@@ -150,5 +150,4 @@ trait CommonFormats {
     val fields = in.map(port => port.toString -> JsObject(Seq.empty))
     JsObject(fields)
   })
-
 }
