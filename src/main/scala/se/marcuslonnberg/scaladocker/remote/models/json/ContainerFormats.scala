@@ -7,6 +7,18 @@ import se.marcuslonnberg.scaladocker.remote.models._
 import se.marcuslonnberg.scaladocker.remote.models.json.JsonUtils._
 
 trait ContainerFormats extends CommonFormats {
+
+  implicit val nodeFormat: Format[Node] = {
+    ((JsPath \ "Labels").formatWithDefault[Map[String, String]](Map.empty) and
+      (JsPath \ "Memory").format[Long] and
+      (JsPath \ "Cpus").format[Long] and
+      (JsPath \ "Name").format[String] and
+      (JsPath \ "Address").format[String] and
+      (JsPath \ "Ip").format[String] and
+      (JsPath \ "Id").format[String]
+      ) (Node.apply, unlift(Node.unapply))
+  }
+
   implicit val containerStatusFormat = {
     ((JsPath \ "Command").format[String] and
       (JsPath \ "Created").format[DateTime](dateTimeSecondsFormat) and
@@ -15,8 +27,9 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "Names").formatWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "Ports").formatWithDefault[Map[Port, Seq[PortBinding]]](Map.empty)(portBindingsArrayFormat) and
       (JsPath \ "Labels").formatWithDefault[Map[String, String]](Map.empty) and
-      (JsPath \ "Status").format[String]
-      )(ContainerStatus.apply, unlift(ContainerStatus.unapply))
+      (JsPath \ "Status").format[String] and
+      (JsPath \ "Node").formatNullable[Node](nodeFormat)
+      ) (ContainerStatus.apply, unlift(ContainerStatus.unapply))
   }
 
   implicit val volumeBindingFormat = Format[VolumeBinding](Reads { in =>
@@ -38,14 +51,14 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "Tty").formatWithDefault[Boolean](false) and
       (JsPath \ "OpenStdin").formatWithDefault[Boolean](false) and
       (JsPath \ "StdinOnce").formatWithDefault[Boolean](false)
-      )(StandardStreamsConfig.apply, unlift(StandardStreamsConfig.unapply))
+      ) (StandardStreamsConfig.apply, unlift(StandardStreamsConfig.unapply))
 
   implicit val containerResourceLimitsFormat: OFormat[ContainerResourceLimits] =
     ((JsPath \ "Memory").formatWithDefault[Long](0) and
       (JsPath \ "MemorySwap").formatWithDefault[Long](0) and
       (JsPath \ "CpuShares").formatWithDefault[Long](0) and
       (JsPath \ "Cpuset").formatNullable[String]
-      )(ContainerResourceLimits.apply, unlift(ContainerResourceLimits.unapply))
+      ) (ContainerResourceLimits.apply, unlift(ContainerResourceLimits.unapply))
 
   implicit val containerConfigFormat: OFormat[ContainerConfig] =
     ((JsPath \ "Image").format[ImageName] and
@@ -63,7 +76,7 @@ trait ContainerFormats extends CommonFormats {
       standardStreamsConfigFormat and
       (JsPath \ "Labels").formatWithDefault[Map[String, String]](Map.empty) and
       (JsPath \ "NetworkDisabled").formatWithDefault[Boolean](false)
-      )(ContainerConfig.apply, unlift(ContainerConfig.unapply))
+      ) (ContainerConfig.apply, unlift(ContainerConfig.unapply))
 
   implicit val restartPolicyFormat = Format[RestartPolicy](Reads { in =>
     (JsPath \ "Name").read[String].reads(in).flatMap {
@@ -98,7 +111,7 @@ trait ContainerFormats extends CommonFormats {
   implicit val capabilitiesConfigFormat: OFormat[LinuxCapabilities] =
     ((JsPath \ "CapAdd").formatWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "CapDrop").formatWithDefault[Seq[String]](Seq.empty)
-      )(LinuxCapabilities.apply, unlift(LinuxCapabilities.unapply))
+      ) (LinuxCapabilities.apply, unlift(LinuxCapabilities.unapply))
 
   implicit val hostConfigFormat: Format[HostConfig] =
     ((JsPath \ "PortBindings").formatWithDefault[Map[Port, Seq[PortBinding]]](Map.empty)(portBindingsObjectFormat) and
@@ -114,7 +127,7 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "Privileged").formatWithDefault[Boolean](false) and
       capabilitiesConfigFormat and
       (JsPath \ "RestartPolicy").formatWithDefault[RestartPolicy](NeverRestart)
-      )(HostConfig.apply, unlift(HostConfig.unapply))
+      ) (HostConfig.apply, unlift(HostConfig.unapply))
 
   implicit val containerStateFormat: Format[ContainerState] = {
     ((JsPath \ "Running").format[Boolean] and
@@ -124,7 +137,7 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "ExitCode").format[Int] and
       (JsPath \ "StartedAt").format(jodaTimeOptionalStringFormat) and
       (JsPath \ "FinishedAt").format(jodaTimeOptionalStringFormat)
-      )(ContainerState.apply, unlift(ContainerState.unapply))
+      ) (ContainerState.apply, unlift(ContainerState.unapply))
   }
 
   implicit val networkSettingsFormat: Format[NetworkSettings] =
@@ -133,13 +146,13 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "Gateway").format[String] and
       (JsPath \ "Bridge").format[String] and
       (JsPath \ "Ports").formatWithDefault[Map[Port, Seq[PortBinding]]](Map.empty)(portBindingsObjectFormat)
-      )(NetworkSettings.apply, unlift(NetworkSettings.unapply))
+      ) (NetworkSettings.apply, unlift(NetworkSettings.unapply))
 
   implicit val containerInfoFormat: Format[ContainerInfo] = {
     val volumesFormat: OFormat[Seq[VolumeBinding]] =
       ((JsPath \ "Volumes").formatWithDefault[Map[String, String]](Map.empty) and
         (JsPath \ "VolumesRW").formatWithDefault[Map[String, Boolean]](Map.empty)
-        )({ (volumes, volumesRw) =>
+        ) ({ (volumes, volumesRw) =>
         volumes.map {
           case (containerPath, hostPath) =>
             val rw = volumesRw.getOrElse(containerPath, false)
@@ -167,6 +180,6 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "ProcessLabel").formatNullable[String] and
       volumesFormat and
       (JsPath \ "HostConfig").format[HostConfig]
-      )(ContainerInfo.apply, unlift(ContainerInfo.unapply))
+      ) (ContainerInfo.apply, unlift(ContainerInfo.unapply))
   }
 }

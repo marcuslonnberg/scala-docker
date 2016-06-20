@@ -388,6 +388,16 @@ case class VolumeBinding(
   rw: Boolean = true
 )
 
+case class Node(
+  labels: Map[String, String],
+  memory: Long,
+  cpus: Long,
+  name:String,
+  address:String,
+  ip: String,
+  id:String
+)
+
 case class ContainerStatus(
   command: String,
   created: DateTime,
@@ -396,5 +406,7 @@ case class ContainerStatus(
   names: Seq[String],
   ports: Map[Port, Seq[PortBinding]] = Map.empty,
   labels: Map[String, String] = Map.empty,
-  status: String
+  status: String,
+  node: Option[Node]
 )
+
