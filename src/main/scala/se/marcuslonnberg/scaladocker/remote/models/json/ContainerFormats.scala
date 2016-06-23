@@ -13,9 +13,9 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "Memory").format[Long] and
       (JsPath \ "Cpus").format[Long] and
       (JsPath \ "Name").format[String] and
-      (JsPath \ "Address").format[String] and
-      (JsPath \ "Ip").format[String] and
-      (JsPath \ "Id").format[String]
+      (JsPath \ "Addr").format[String] and
+      (JsPath \ "IP").format[String] and
+      (JsPath \ "ID").format[String]
       ) (Node.apply, unlift(Node.unapply))
   }
 
@@ -27,8 +27,7 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "Names").formatWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "Ports").formatWithDefault[Map[Port, Seq[PortBinding]]](Map.empty)(portBindingsArrayFormat) and
       (JsPath \ "Labels").formatWithDefault[Map[String, String]](Map.empty) and
-      (JsPath \ "Status").format[String] and
-      (JsPath \ "Node").formatNullable[Node](nodeFormat)
+      (JsPath \ "Status").format[String]
       ) (ContainerStatus.apply, unlift(ContainerStatus.unapply))
   }
 
@@ -179,7 +178,8 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "MountLabel").formatNullable[String] and
       (JsPath \ "ProcessLabel").formatNullable[String] and
       volumesFormat and
-      (JsPath \ "HostConfig").format[HostConfig]
+      (JsPath \ "HostConfig").format[HostConfig] and
+        (JsPath \ "Node").formatNullable[Node](nodeFormat)
       ) (ContainerInfo.apply, unlift(ContainerInfo.unapply))
   }
 }
