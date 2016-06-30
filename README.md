@@ -11,7 +11,7 @@ Setup
 Add as a dependency in your `build.sbt`:
 
 ```scala
-libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.6.0"
+libraryDependencies += "se.marcuslonnberg" %% "scala-docker" % "0.6.1"
 ```
 
 Usage
