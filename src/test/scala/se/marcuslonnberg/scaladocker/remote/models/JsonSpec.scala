@@ -34,6 +34,17 @@ class JsonSpec extends FlatSpec with Matchers {
     info.config.labels.get("build.appName") shouldEqual Some("fancy-app")
   }
 
+  it should "handle swarm node" in {
+    val infoJson = readResource("container-info-with-swarmnode.json")
+    val info = infoJson.as[ContainerInfo]
+    compareJsonFromModel(info)
+    info.node shouldBe defined
+    info.node shouldEqual Some(
+      Node(Map("storagedriver"->"aufs"), 16827527168L, 4, "ip-172-31-23-2", "172.31.23.2:2375", "172.31.23.2", "7225:K65R:WGBL:3CKF:47R3:WC72:ADAX:ZJF3:4T2M:PUQW:TNSS:DGJA")
+    )
+  }
+
+
   "ContainerConfig" should "be serializable and deserializable with JSON" in {
     val containerConfigJson = readResource("container-config.json")
     val containerConfig = containerConfigJson.as[ContainerConfig]

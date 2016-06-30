@@ -366,8 +366,9 @@ case class ContainerInfo(
   mountLabel: Option[String] = None,
   processLabel: Option[String] = None,
   volumes: Seq[VolumeBinding] = Seq.empty,
-  hostConfig: HostConfig
-)
+  hostConfig: HostConfig,
+  node: Option[Node]
+                        )
 
 object VolumeBinding {
   def unapply(binding: String): Option[VolumeBinding] = {
@@ -406,7 +407,6 @@ case class ContainerStatus(
   names: Seq[String],
   ports: Map[Port, Seq[PortBinding]] = Map.empty,
   labels: Map[String, String] = Map.empty,
-  status: String,
-  node: Option[Node]
+  status: String
 )
 
