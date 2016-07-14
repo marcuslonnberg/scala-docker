@@ -92,7 +92,6 @@ case class ContainerConfig(
   user: Option[String] = None,
   hostname: Option[String] = None,
   domainName: Option[String] = None,
-  resourceLimits: ContainerResourceLimits = ContainerResourceLimits(),
   standardStreams: StandardStreamsConfig = StandardStreamsConfig(),
   labels: Map[String, String] = Map.empty,
   networkDisabled: Boolean = false
@@ -148,10 +147,6 @@ case class ContainerConfig(
     copy(domainName = Option(domainName).filter(_.nonEmpty))
   }
 
-  def withResourceLimits(resourceLimits: ContainerResourceLimits) = {
-    copy(resourceLimits = resourceLimits)
-  }
-
   def withStandardStreams(standardStreams: StandardStreamsConfig) = {
     copy(standardStreams = standardStreams)
   }
@@ -196,6 +191,7 @@ case class StandardStreamsConfig(
 case class ContainerResourceLimits(
   memory: Long = 0,
   memorySwap: Long = 0,
+  memoryReservation: Long = 0,
   cpuShares: Long = 0,
   cpuset: Option[String] = None
 )
@@ -244,6 +240,7 @@ case class HostConfig(
   networkMode: Option[String] = None,
   privileged: Boolean = false,
   capabilities: LinuxCapabilities = LinuxCapabilities(),
+  resourceLimits: ContainerResourceLimits = ContainerResourceLimits(),
   restartPolicy: RestartPolicy = NeverRestart
 ) {
   def withPortBindings(ports: (Port, Seq[PortBinding])*) = {
@@ -297,6 +294,11 @@ case class HostConfig(
   def withRestartPolicy(restartPolicy: RestartPolicy) = {
     copy(restartPolicy = restartPolicy)
   }
+
+  def withResourceLimits(resourceLimits: ContainerResourceLimits) = {
+    copy(resourceLimits = resourceLimits)
+  }
+
 }
 
 /**

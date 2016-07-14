@@ -55,8 +55,9 @@ trait ContainerFormats extends CommonFormats {
   implicit val containerResourceLimitsFormat: OFormat[ContainerResourceLimits] =
     ((JsPath \ "Memory").formatWithDefault[Long](0) and
       (JsPath \ "MemorySwap").formatWithDefault[Long](0) and
+      (JsPath \ "MemoryReservation").formatWithDefault[Long](0) and
       (JsPath \ "CpuShares").formatWithDefault[Long](0) and
-      (JsPath \ "Cpuset").formatNullable[String]
+      (JsPath \ "CpusetCpus").formatNullable[String]
       ) (ContainerResourceLimits.apply, unlift(ContainerResourceLimits.unapply))
 
   implicit val containerConfigFormat: OFormat[ContainerConfig] =
@@ -71,7 +72,6 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "User").formatNullable[String] and
       (JsPath \ "Hostname").formatNullable[String] and
       (JsPath \ "DomainName").formatNullable[String] and
-      containerResourceLimitsFormat and
       standardStreamsConfigFormat and
       (JsPath \ "Labels").formatWithDefault[Map[String, String]](Map.empty) and
       (JsPath \ "NetworkDisabled").formatWithDefault[Boolean](false)
@@ -125,6 +125,7 @@ trait ContainerFormats extends CommonFormats {
       (JsPath \ "NetworkMode").formatNullable[String].inmap[Option[String]](_.filter(_.nonEmpty), identity) and
       (JsPath \ "Privileged").formatWithDefault[Boolean](false) and
       capabilitiesConfigFormat and
+      containerResourceLimitsFormat and
       (JsPath \ "RestartPolicy").formatWithDefault[RestartPolicy](NeverRestart)
       ) (HostConfig.apply, unlift(HostConfig.unapply))
 
