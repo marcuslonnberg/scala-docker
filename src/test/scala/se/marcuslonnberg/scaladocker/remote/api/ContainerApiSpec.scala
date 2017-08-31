@@ -48,10 +48,10 @@ class ContainerApiSpec extends TestKit(ActorSystem("container-api")) with ApiSpe
   }
 
   it should "start a container" taggedAs RemoteApiTest in {
-    val createId = client.create(ContainerConfig(busybox)).futureValue.id
-
     val hostConfig = HostConfig(publishAllPorts = true)
-    val startId = client.start(createId, Some(hostConfig)).futureValue
+    val createId = client.create(ContainerConfig(busybox), hostConfig).futureValue.id
+
+    val startId = client.start(createId).futureValue
 
     startId shouldEqual createId
 
