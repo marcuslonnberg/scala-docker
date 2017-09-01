@@ -1,16 +1,19 @@
 import sbt._
 
 object Dependencies {
-  val akkaVersion = "2.4.3"
-  val playJsonVersion = "2.5.1"
+  val akkaVersion = "2.5.4"
+  val akkaHttpVersion = "10.0.9"
+  val playJsonVersion = "2.6.3"
 
   val akka = Seq(
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,
     "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
     "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-    "com.typesafe.akka" %% "akka-http-core" % akkaVersion,
-    "com.typesafe.akka" %% "akka-http-experimental" % akkaVersion,
     "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % "test"
+  )
+
+  val akkaHttp = Seq(
+    "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
   )
 
   val json = Seq(
@@ -20,13 +23,14 @@ object Dependencies {
   val misc = Seq(
     "org.kamranzafar" % "jtar" % "2.3",
     "commons-codec" % "commons-codec" % "1.10",
-    "com.github.nscala-time" %% "nscala-time" % "2.12.0",
-    "org.scalatest" %% "scalatest" % "2.2.6" % "test",
+    "com.github.nscala-time" %% "nscala-time" % "2.16.0",
+    "org.scalatest" %% "scalatest" % "3.0.2" % "test",
     "ca.juliusdavies" % "not-yet-commons-ssl" % "0.3.11"
   )
 
   val all =
     akka ++
+      akkaHttp ++
       json ++
       misc
 

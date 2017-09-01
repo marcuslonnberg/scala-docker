@@ -3,7 +3,6 @@ package se.marcuslonnberg.scaladocker.remote.models.json
 import akka.http.scaladsl.model.Uri
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatterBuilder, ISODateTimeFormat}
-import play.api.data.validation.ValidationError
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import se.marcuslonnberg.scaladocker.remote.models._
@@ -86,7 +85,7 @@ trait CommonFormats {
   )
 
   implicit val portFormat = Format[Port](
-    JsPath.read[String].collect(ValidationError("Bad port format")) {
+    JsPath.read[String].collect(JsonValidationError("Bad port format")) {
       case Port(port) => port
     },
     Writes { port =>

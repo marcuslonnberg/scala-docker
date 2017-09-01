@@ -4,7 +4,7 @@ name := "scala-docker"
 organization := "se.marcuslonnberg"
 organizationHomepage := Some(url("https://github.com/marcuslonnberg"))
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.3"
 scalacOptions := Seq("-deprecation", "-unchecked", "-feature")
 
 libraryDependencies ++= Dependencies.all
